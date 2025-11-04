@@ -28,4 +28,4 @@ async def predict(file: UploadFile = File(...)):
     if prob_crate >= THRESHOLD:
         return {"prediction": "Crate", "confidence": prob_crate}
     else:
-        return {"prediction": "Creat_not_Detected", "confidence": prob_crate}
+        return {"prediction": "There is no crate detected", "confidence": prob_crate}
