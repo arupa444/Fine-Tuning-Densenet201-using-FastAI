@@ -9,7 +9,7 @@ app = FastAPI()
 THRESHOLD = 0.88  # 88%
 
 # Load ONNX model
-session = ort.InferenceSession("model.onnx")
+session = ort.InferenceSession("../JFL_Crate_Data.onnx")
 input_name = session.get_inputs()[0].name
 
 @app.post("/predict")
