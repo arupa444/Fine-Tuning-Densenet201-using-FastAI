@@ -1,3 +1,4 @@
 fastapi
 onnxruntime
 Pillow
+numpy
