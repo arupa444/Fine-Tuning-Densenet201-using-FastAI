@@ -8,6 +8,7 @@ import onnxruntime as ort
 
 app = FastAPI()
 
+
 # Load YOLO TFLite models for object detection
 crate_model = YOLO(
     r"../model/jfl_crate_model_obb_01052025_with_nms_conf_0.5_yolo_v11.tflite",
