@@ -1,8 +1,7 @@
 fastapi
-uvicorn[standard]
+uvicorn
 ultralytics
 onnxruntime
 numpy
 Pillow
 python-multipart
-tensorflow
