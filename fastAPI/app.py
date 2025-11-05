@@ -25,8 +25,9 @@ def preprocess_image(image: Image.Image, size=(64, 64)) -> np.ndarray:
     return image
 
 
-@app.post("/predict")
+@app.post("/marker_classification_predict")
 async def predict(file: UploadFile = File(...)):
+    input_name, output_name, session = get_model_path("../models/marker_classification_efficientnet_21st_aug_2025_fp16.onnx")
     """Run inference with the ONNX model on an uploaded image."""
     # Read and load the uploaded image
     image_bytes = await file.read()
@@ -46,9 +47,9 @@ async def predict(file: UploadFile = File(...)):
     }
 
 
-
-@app.post("/predict")
+@app.post("/color_classifier_predict")
 async def predict(file: UploadFile = File(...)):
+    input_name, output_name, session = get_model_path("../models/color_classifier.onnx")
     """Run inference with the ONNX model on an uploaded image."""
     # Read and load the uploaded image
     image_bytes = await file.read()
