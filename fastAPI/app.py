@@ -37,14 +37,21 @@ def read_image_for_yolo(file_bytes: bytes) -> np.ndarray:
         )
 
 def process_yolo_results(results):
-    """Extract predicted bounding boxes and render the annotated output image."""
+    """Extract predicted oriented bounding boxes and render the annotated output image."""
     boxes_info = []
-    if results[0].obb is not None:
-        for box in results[0].obb.xyxyxyxy:
-            cls = int(box[-1])
-            score = float(box[-2])
-            boxes_info.append({"class_id": cls, "confidence": score})
-    return boxes_info, results[0].plot()
+    obb = results[0].obb  # Oriented bounding boxes result handler
+
+    for i in range(len(obb.conf)):
+        cls = int(obb.cls[i])  # class index
+        conf = float(obb.conf[i])  # confidence score
+        boxes_info.append({
+            "class_id": cls,
+            "confidence": conf
+        })
+
+    annotated = results[0].plot()  # Visualized result in numpy format
+    return boxes_info, annotated
+
 
 def serve_annotated_image(np_image, headers):
     """Convert numpy image array into an HTTP image response."""
