@@ -109,38 +109,46 @@ def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
 
 @app.post("/predict/crate/")
 async def predict_crate(file: UploadFile = File(...)):
-    if file.content_type not in SUPPORTED_IMAGE_TYPES:
-        raise HTTPException(
-            status_code=415,
-            detail=f"Unsupported image type: {file.content_type}. Supported: {SUPPORTED_IMAGE_TYPES}",
-        )
+    try:
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(
+                status_code=415,
+                detail=f"Unsupported image type: {file.content_type}. Supported: {SUPPORTED_IMAGE_TYPES}",
+            )
 
-    image_bytes = await file.read()
-    image_np = read_image_for_yolo(image_bytes)
-    crate_model = get_crate_model()
+        image_bytes = await file.read()
+        image_np = read_image_for_yolo(image_bytes)
 
-    results = crate_model.predict(source=image_np, conf=0.25, verbose=False)
-    boxes, annotated_image = process_yolo_results(results)
+        model = get_crate_model()
+        results = model.predict(source=image_np, conf=0.25, verbose=False)
 
-    return serve_annotated_image(annotated_image, headers={"X-Predictions": str(boxes)})
-
+        boxes, annotated_image = process_yolo_results(results)
+        return serve_annotated_image(annotated_image, headers={"X-Predictions": str(boxes)})
+    except Exception as e:
+        logging.error(f"Crate prediction failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to perform crate prediction")
 
 @app.post("/predict/marker/")
 async def predict_marker(file: UploadFile = File(...)):
-    if file.content_type not in SUPPORTED_IMAGE_TYPES:
-        raise HTTPException(
-            status_code=415,
-            detail=f"Unsupported image type: {file.content_type}. Supported: {SUPPORTED_IMAGE_TYPES}",
-        )
+    try:
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(
+                status_code=415,
+                detail=f"Unsupported image type: {file.content_type}. Supported: {SUPPORTED_IMAGE_TYPES}",
+            )
 
-    image_bytes = await file.read()
-    image_np = read_image_for_yolo(image_bytes)
-    marker_model = get_marker_model()
+        image_bytes = await file.read()
+        image_np = read_image_for_yolo(image_bytes)
+        marker_model = get_marker_model()
 
-    results = marker_model.predict(source=image_np, conf=0.25, verbose=False)
-    boxes, annotated_image = process_yolo_results(results)
+        results = marker_model.predict(source=image_np, conf=0.25, verbose=False)
+        boxes, annotated_image = process_yolo_results(results)
 
-    return serve_annotated_image(annotated_image, headers={"X-Predictions": str(boxes)})
+        return serve_annotated_image(annotated_image, headers={"X-Predictions": str(boxes)})
+    except Exception as e:
+        logging.error(f"Crate prediction failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to perform crate prediction")
+
 
 
 # --- ONNX Classification Endpoints ---
