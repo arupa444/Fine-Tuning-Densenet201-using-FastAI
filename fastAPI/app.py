@@ -1,7 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 from ultralytics import YOLO
-from PIL import Image
+from PIL import Image, ImageOps
 import numpy as np
 import io
 import onnxruntime as ort
@@ -29,7 +29,10 @@ SUPPORTED_IMAGE_TYPES = [
 def read_image_for_yolo(file_bytes: bytes) -> np.ndarray:
     """Load an image from bytes for YOLO prediction."""
     try:
-        image = Image.open(io.BytesIO(file_bytes)).convert("RGB")
+        image = Image.open(io.BytesIO(file_bytes))
+        # Apply EXIF orientation
+        image = ImageOps.exif_transpose(image)
+        image = image.convert("RGB")
         return np.array(image)
     except Exception:
         raise HTTPException(
@@ -124,7 +127,10 @@ async def predict_marker_classification(file: UploadFile = File(...)):
     session, input_name, output_name = get_onnx_session("../model/marker_classification_efficientnet_21st_aug_2025_fp16.onnx")
 
     image_bytes = await file.read()
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image = Image.open(io.BytesIO(image_bytes))
+    # Apply EXIF orientation
+    image = ImageOps.exif_transpose(image)
+    image = image.convert("RGB")
     input_data = preprocess_image_for_onnx(image, (64, 64))
 
     outputs = session.run([output_name], {input_name: input_data})
@@ -143,8 +149,12 @@ async def predict_color_classification(file: UploadFile = File(...)):
     session, input_name, output_name = get_onnx_session("../model/color_classifier.onnx")
 
     image_bytes = await file.read()
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image = Image.open(io.BytesIO(image_bytes))
+    # Apply EXIF orientation
+    image = ImageOps.exif_transpose(image)
+    image = image.convert("RGB")
     input_data = preprocess_image_for_onnx(image, (244, 244))
+
 
     outputs = session.run([output_name], {input_name: input_data})
 
