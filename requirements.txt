@@ -5,3 +5,4 @@ onnxruntime
 numpy
 Pillow
 python-multipart
+tensorflow
