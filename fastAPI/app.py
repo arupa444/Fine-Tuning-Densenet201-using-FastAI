@@ -1,8 +1,10 @@
-from fastapi import FastAPI, File, UploadFile
-import numpy as np
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from ultralytics import YOLO
 import onnxruntime as ort
 from PIL import Image
+import numpy as np
 import io
+
 
 app = FastAPI()
 
