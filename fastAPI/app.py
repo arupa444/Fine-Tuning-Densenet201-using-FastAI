@@ -137,7 +137,6 @@ async def predict_marker(file: UploadFile = File(...)):
                 detail=f"Unsupported image type: {file.content_type}. Supported: {SUPPORTED_IMAGE_TYPES}",
             )
 
-
         image_bytes = await file.read()
         image_np = read_image_for_yolo(image_bytes)
         marker_model = get_marker_model()
@@ -147,8 +146,8 @@ async def predict_marker(file: UploadFile = File(...)):
 
         return serve_annotated_image(annotated_image, headers={"X-Predictions": str(boxes)})
     except Exception as e:
-        logging.error(f"Crate prediction failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to perform crate prediction")
+        logging.error(f"marker prediction failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to perform marker prediction")
 
 
 
@@ -157,43 +156,51 @@ async def predict_marker(file: UploadFile = File(...)):
 @app.post("/marker_classification_predict")
 async def predict_marker_classification(file: UploadFile = File(...)):
     """Run inference with the marker classification ONNX model."""
-    session, input_name, output_name = get_onnx_session("model/marker_classification_efficientnet_21st_aug_2025_fp16.onnx")
+    try:
+        session, input_name, output_name = get_onnx_session("model/marker_classification_efficientnet_21st_aug_2025_fp16.onnx")
 
-    image_bytes = await file.read()
-    image = Image.open(io.BytesIO(image_bytes))
-    # Apply EXIF orientation
-    image = ImageOps.exif_transpose(image)
-    image = image.convert("RGB")
-    input_data = preprocess_image_for_onnx(image, (64, 64))
+        image_bytes = await file.read()
+        image = Image.open(io.BytesIO(image_bytes))
+        # Apply EXIF orientation
+        image = ImageOps.exif_transpose(image)
+        image = image.convert("RGB")
+        input_data = preprocess_image_for_onnx(image, (64, 64))
 
-    outputs = session.run([output_name], {input_name: input_data})
+        outputs = session.run([output_name], {input_name: input_data})
 
-    return {
-        "model_input_name": input_name,
-        "model_output_name": output_name,
-        "output_shape": np.array(outputs[0]).shape,
-        "output": np.array(outputs[0]).tolist()
-    }
+        return {
+            "model_input_name": input_name,
+            "model_output_name": output_name,
+            "output_shape": np.array(outputs[0]).shape,
+            "output": np.array(outputs[0]).tolist()
+        }
+    except Exception as e:
+        logging.error(f"marker classification failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to perform marker classification")
 
 
 @app.post("/color_classifier_predict")
 async def predict_color_classification(file: UploadFile = File(...)):
     """Run inference with the color classification ONNX model."""
-    session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
+    try:
+        session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
 
-    image_bytes = await file.read()
-    image = Image.open(io.BytesIO(image_bytes))
-    # Apply EXIF orientation
-    image = ImageOps.exif_transpose(image)
-    image = image.convert("RGB")
-    input_data = preprocess_image_for_onnx(image, (244, 244))
+        image_bytes = await file.read()
+        image = Image.open(io.BytesIO(image_bytes))
+        # Apply EXIF orientation
+        image = ImageOps.exif_transpose(image)
+        image = image.convert("RGB")
+        input_data = preprocess_image_for_onnx(image, (244, 244))
 
 
-    outputs = session.run([output_name], {input_name: input_data})
+        outputs = session.run([output_name], {input_name: input_data})
 
-    return {
-        "model_input_name": input_name,
-        "model_output_name": output_name,
-        "output_shape": np.array(outputs[0]).shape,
-        "output": np.array(outputs[0]).tolist()
-    }
+        return {
+            "model_input_name": input_name,
+            "model_output_name": output_name,
+            "output_shape": np.array(outputs[0]).shape,
+            "output": np.array(outputs[0]).tolist()
+        }
+    except Exception as e:
+        logging.error(f"color classifier failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to perform color classifier")
