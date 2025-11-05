@@ -137,6 +137,7 @@ async def predict_marker(file: UploadFile = File(...)):
                 detail=f"Unsupported image type: {file.content_type}. Supported: {SUPPORTED_IMAGE_TYPES}",
             )
 
+
         image_bytes = await file.read()
         image_np = read_image_for_yolo(image_bytes)
         marker_model = get_marker_model()
