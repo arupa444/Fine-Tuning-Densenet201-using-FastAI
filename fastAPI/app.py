@@ -96,7 +96,7 @@ async def predict_crate(file: UploadFile = File(...)):
 
     image_bytes = await file.read()
     image_np = read_image_for_yolo(image_bytes)
-    crate_model = get_crate_model
+    crate_model = get_crate_model()
 
     results = crate_model.predict(source=image_np, conf=0.25, verbose=False)
     boxes, annotated_image = process_yolo_results(results)
