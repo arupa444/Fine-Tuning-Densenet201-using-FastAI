@@ -3,9 +3,10 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from functools import lru_cache
 from ultralytics import YOLO
 from PIL import Image, ImageOps
+import onnxruntime as ort
 import numpy as np
 import io
-import onnxruntime as ort
+import base64
 import logging
 
 
@@ -79,13 +80,18 @@ def process_yolo_results(results):
     return boxes_info, annotated
 
 
-def serve_annotated_image(np_image, headers):
-    """Convert numpy image array into an HTTP image response."""
+def get_annotated_image_json(np_image, boxes_info):
+    """Convert numpy image array into a JSON response with base64 image."""
     img = Image.fromarray(np_image)
     img_bytes = io.BytesIO()
     img.save(img_bytes, format="PNG")
-    img_bytes.seek(0)
-    return StreamingResponse(img_bytes, media_type="image/png", headers=headers)
+    img_base64 = base64.b64encode(img_bytes.getvalue()).decode("utf-8")
+    return JSONResponse(
+        content={
+            "predictions": boxes_info,
+            "annotated_image": img_base64,
+        }
+    )
 
 
 # --- Helper Functions for ONNX Models ---
@@ -124,7 +130,7 @@ async def predict_crate(file: UploadFile = File(...)):
         results = model.predict(source=image_np, conf=0.25, verbose=False)
 
         boxes, annotated_image = process_yolo_results(results)
-        return serve_annotated_image(annotated_image, headers={"X-Predictions": str(boxes)})
+        return get_annotated_image_json(annotated_image, boxes)
     except Exception as e:
         logging.error(f"Crate prediction failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to perform crate prediction")
@@ -145,7 +151,7 @@ async def predict_marker(file: UploadFile = File(...)):
         results = marker_model.predict(source=image_np, conf=0.25, verbose=False)
         boxes, annotated_image = process_yolo_results(results)
 
-        return serve_annotated_image(annotated_image, headers={"X-Predictions": str(boxes)})
+        return get_annotated_image_json(annotated_image, boxes)
     except Exception as e:
         logging.error(f"marker prediction failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to perform marker prediction")
@@ -169,12 +175,12 @@ async def predict_marker_classification(file: UploadFile = File(...)):
 
         outputs = session.run([output_name], {input_name: input_data})
 
-        return {
+        return JSONResponse(content={
             "model_input_name": input_name,
             "model_output_name": output_name,
             "output_shape": np.array(outputs[0]).shape,
             "output": np.array(outputs[0]).tolist()
-        }
+        })
     except Exception as e:
         logging.error(f"marker classification failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to perform marker classification")
@@ -196,12 +202,12 @@ async def predict_color_classification(file: UploadFile = File(...)):
 
         outputs = session.run([output_name], {input_name: input_data})
 
-        return {
+        return JSONResponse(content={
             "model_input_name": input_name,
             "model_output_name": output_name,
             "output_shape": np.array(outputs[0]).shape,
             "output": np.array(outputs[0]).tolist()
-        }
+        })
     except Exception as e:
         logging.error(f"color classifier failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to perform color classifier")
