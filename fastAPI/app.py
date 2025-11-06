@@ -8,6 +8,7 @@ import io
 import onnxruntime as ort
 import logging
 
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 app = FastAPI()
