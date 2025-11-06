@@ -211,3 +211,72 @@ async def predict_color_classification(file: UploadFile = File(...)):
     except Exception as e:
         logging.error(f"color classifier failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to perform color classifier")
+
+
+@app.post("/predict/crate_with_color/")
+async def predict_crate_with_color(file: UploadFile = File(...)):
+    try:
+        # Validate image type
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(
+                status_code=415,
+                detail=f"Unsupported image type: {file.content_type}. Supported: {SUPPORTED_IMAGE_TYPES}",
+            )
+
+        # Read image and get numpy format
+        image_bytes = await file.read()
+        image_np = read_image_for_yolo(image_bytes)
+        pil_image = Image.fromarray(image_np)
+
+        # Step 1: Run crate detection
+        crate_model = get_crate_model()
+        crate_results = crate_model.predict(source=image_np, conf=0.25, verbose=False)
+        boxes_info, annotated_image = process_yolo_results(crate_results)
+
+        # Prepare color counters
+        color_counts = {
+            "BLUE": 0,
+            "RED": 0,
+            "YELLOW": 0
+        }
+        color_labels = ["BLUE", "RED", "YELLOW"]
+
+        # Load ONNX model session
+        session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
+
+        # Step 2: Crop and classify each crate
+        for box in crate_results[0].obb.xyxy:  # get rotated bounding boxes in xyxy format
+            x1, y1, x2, y2 = map(int, box)
+            crop = pil_image.crop((x1, y1, x2, y2))
+            input_data = preprocess_image_for_onnx(crop, (244, 244))
+
+            # Run classification
+            outputs = session.run([output_name], {input_name: input_data})
+            class_idx = int(np.argmax(outputs[0]))
+            color_counts[color_labels[class_idx]] += 1
+
+        # Step 3: Prepare response JSON
+        return JSONResponse(content={
+            "data": {
+                "predictions": boxes_info,
+                "annotated_image": base64.b64encode(Image.fromarray(annotated_image).tobytes()).decode("utf-8"),
+                "blue_count": color_counts["BLUE"],
+                "yellow_count": color_counts["YELLOW"],
+                "red_count": color_counts["RED"],
+            },
+            "message": "Crate detection done with color classification",
+            "code": 200,
+            "error": None
+        })
+
+    except Exception as e:
+        logging.error(f"Crate with color classification failed: {e}", exc_info=True)
+        return JSONResponse(
+            status_code=400,
+            content={
+                "data": None,
+                "message": "Crate detection failed",
+                "code": 400,
+                "error": str(e)
+            }
+        )
