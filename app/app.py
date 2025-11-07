@@ -181,7 +181,14 @@ async def predict_marker(
 # --- ONNX Classification Endpoints ---
 
 @app.post("/marker_classification_predict")
-async def predict_marker_classification(file: UploadFile = File(...)):
+async def predict_marker_classification(
+        scan_type: Optional[str] = Form(None),
+        app_type: Optional[str] = Form(None),
+        type_of_load: Optional[str] = Form(None),
+        store_transfer_type: Optional[str] = Form(None),
+        android_session_id: Optional[str] = Form(None),
+        file: UploadFile = File(...)
+):
     """Run inference with the marker classification ONNX model."""
     try:
         session, input_name, output_name = get_onnx_session("model/marker_classification_efficientnet_21st_aug_2025_fp16.onnx")
@@ -207,7 +214,14 @@ async def predict_marker_classification(file: UploadFile = File(...)):
 
 
 @app.post("/color_classifier_predict")
-async def predict_color_classification(file: UploadFile = File(...)):
+async def predict_color_classification(
+        scan_type: Optional[str] = Form(None),
+        app_type: Optional[str] = Form(None),
+        type_of_load: Optional[str] = Form(None),
+        store_transfer_type: Optional[str] = Form(None),
+        android_session_id: Optional[str] = Form(None),
+        file: UploadFile = File(...)
+):
     """Run inference with the color classification ONNX model."""
     try:
         session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
