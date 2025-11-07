@@ -20,6 +20,18 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 app = FastAPI()
 
+# Initialize S3 client
+s3 = boto3.client("s3")
+BUCKET_NAME = "your-s3-bucket-name"
+
+def upload_to_s3(file_bytes, key, content_type="image/jpeg"):
+    try:
+        s3.put_object(Bucket=BUCKET_NAME, Key=key, Body=file_bytes, ContentType=content_type)
+        return key
+    except NoCredentialsError:
+        raise HTTPException(status_code=500, detail="AWS credentials not found.")
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logging.error(f"Unhandled error: {exc}", exc_info=True)
@@ -87,22 +99,46 @@ def process_yolo_results(results):
 
 
 def get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type, android_session_id, np_image, boxes_info):
-    """Convert numpy image array into a JSON response with base64 image."""
-    img = Image.fromarray(np_image)
-    img_bytes = io.BytesIO()
-    img.save(img_bytes, format="PNG")
-    img_base64 = base64.b64encode(img_bytes.getvalue()).decode("utf-8")
-    return JSONResponse(
-        content={
+    """Convert numpy image array into a JSON response with base64 image + upload annotated image and predictions to S3."""
+    try:
+        # Convert numpy image to PIL and bytes
+        img = Image.fromarray(np_image)
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format="JPEG")
+        img_bytes.seek(0)
+
+        # Prepare JSON data
+        result_json = {
             "scan_type": scan_type,
             "app_type": app_type,
             "type_of_load": type_of_load,
             "store_transfer_type": store_transfer_type,
             "android_session_id": android_session_id,
-            "predictions": boxes_info,
-            "annotated_image": img_base64
+            "predictions": boxes_info
         }
-    )
+
+        # Generate unique S3 keys
+        image_key = f"outputs/{uuid.uuid4()}.jpg"
+        json_key = f"outputs/{uuid.uuid4()}.json"
+
+        # Upload both to S3
+        upload_to_s3(img_bytes.getvalue(), image_key, content_type="image/jpeg")
+        upload_to_s3(json.dumps(result_json).encode(), json_key, content_type="application/json")
+
+        # Return JSON with both inline data + S3 URLs
+        return JSONResponse(
+            content={
+                **result_json,
+                "annotated_image_s3_key": image_key,
+                "predictions_s3_key": json_key,
+                "annotated_image_url": f"https://{BUCKET_NAME}.s3.amazonaws.com/{image_key}",
+                "predictions_json_url": f"https://{BUCKET_NAME}.s3.amazonaws.com/{json_key}"
+            }
+        )
+    except Exception as e:
+        logging.error(f"Failed to generate annotated image JSON or upload to S3: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate annotated image JSON")
+
 
 
 # --- Helper Functions for ONNX Models ---
