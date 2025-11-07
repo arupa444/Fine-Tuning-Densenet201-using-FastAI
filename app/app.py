@@ -1,5 +1,6 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Request
 from fastapi.responses import StreamingResponse, JSONResponse
+from typing import Optional
 from functools import lru_cache
 from ultralytics import YOLO
 from PIL import Image, ImageOps
@@ -80,7 +81,7 @@ def process_yolo_results(results):
     return boxes_info, annotated
 
 
-def get_annotated_image_json(np_image, boxes_info):
+def get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type, android_session_id, np_image, boxes_info):
     """Convert numpy image array into a JSON response with base64 image."""
     img = Image.fromarray(np_image)
     img_bytes = io.BytesIO()
@@ -88,8 +89,13 @@ def get_annotated_image_json(np_image, boxes_info):
     img_base64 = base64.b64encode(img_bytes.getvalue()).decode("utf-8")
     return JSONResponse(
         content={
+            "scan_type": scan_type,
+            "app_type": app_type,
+            "type_of_load": type_of_load,
+            "store_transfer_type": store_transfer_type,
+            "android_session_id": android_session_id,
             "predictions": boxes_info,
-            "annotated_image": img_base64,
+            "annotated_image": img_base64
         }
     )
 
@@ -115,7 +121,14 @@ def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
 # --- YOLO Object Detection Endpoints ---
 
 @app.post("/predict/crate/")
-async def predict_crate(file: UploadFile = File(...)):
+async def predict_crate(
+        scan_type: Optional[str] = Form(None),
+        app_type: Optional[str] = Form(None),
+        type_of_load: Optional[str] = Form(None),
+        store_transfer_type: Optional[str] = Form(None),
+        android_session_id: Optional[str] = Form(None),
+        file: UploadFile = File(...)
+):
     try:
         if file.content_type not in SUPPORTED_IMAGE_TYPES:
             raise HTTPException(
@@ -130,7 +143,7 @@ async def predict_crate(file: UploadFile = File(...)):
         results = model.predict(source=image_np, conf=0.25, verbose=False)
 
         boxes, annotated_image = process_yolo_results(results)
-        return get_annotated_image_json(annotated_image, boxes)
+        return get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type, android_session_id, annotated_image, boxes)
     except Exception as e:
         logging.error(f"Crate prediction failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to perform crate prediction")
