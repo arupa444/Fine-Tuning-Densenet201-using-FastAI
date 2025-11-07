@@ -98,6 +98,8 @@ def get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_t
 
         return JSONResponse(content={
             "status": "success",
+            "image_key": image_key,
+            "json_key": json_key,
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key),
             "predictions": boxes_info
@@ -296,11 +298,10 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
 
         return JSONResponse(content={
             "status": "success",
+            "image_key": image_key,
+            "json_key": json_key,
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key),
-            "blue_count": color_counts["BLUE"],
-            "red_count": color_counts["RED"],
-            "yellow_count": color_counts["YELLOW"],
         })
     except Exception as e:
         logging.error(f"Crate with color classification failed: {e}", exc_info=True)
