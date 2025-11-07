@@ -1,5 +1,6 @@
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Request
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import JSONResponse
+from botocore.exceptions import NoCredentialsError
 from typing import Optional
 from functools import lru_cache
 from ultralytics import YOLO
@@ -9,6 +10,10 @@ import numpy as np
 import io
 import base64
 import logging
+import boto3
+import uuid
+import json
+
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
