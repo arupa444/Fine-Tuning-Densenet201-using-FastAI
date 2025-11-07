@@ -342,21 +342,40 @@ async def predict_crate_with_color(
             class_idx = int(np.argmax(outputs[0]))
             color_counts[color_labels[class_idx]] += 1
 
-        # Step 3: Prepare response JSON
+        # Step 3: Convert annotated image to bytes
+        img_bytes = io.BytesIO()
+        Image.fromarray(annotated_image).save(img_bytes, format="JPEG")
+        img_bytes.seek(0)
+
+        # Prepare JSON result for S3
+        result_json = {
+            "scan_type": scan_type,
+            "app_type": app_type,
+            "type_of_load": type_of_load,
+            "store_transfer_type": store_transfer_type,
+            "android_session_id": android_session_id,
+            "predictions": boxes_info,
+            "color_counts": color_counts
+        }
+
+        # Step 4: Generate unique S3 keys
+        image_key = f"outputs/{uuid.uuid4()}.jpg"
+        json_key = f"outputs/{uuid.uuid4()}.json"
+
+        # Step 5: Upload to S3
+        upload_to_s3(img_bytes.getvalue(), image_key, content_type="image/jpeg")
+        upload_to_s3(json.dumps(result_json).encode(), json_key, content_type="application/json")
+
+        # Step 6: Return JSON response with S3 URLs
         return JSONResponse(content={
             "data": {
-                "scan_type": scan_type,
-                "app_type": app_type,
-                "type_of_load": type_of_load,
-                "store_transfer_type": store_transfer_type,
-                "android_session_id": android_session_id,
-                "predictions": boxes_info,
-                "annotated_image": base64.b64encode(Image.fromarray(annotated_image).tobytes()).decode("utf-8"),
-                "blue_count": color_counts["BLUE"],
-                "yellow_count": color_counts["YELLOW"],
-                "red_count": color_counts["RED"],
+                **result_json,
+                "annotated_image_s3_key": image_key,
+                "predictions_s3_key": json_key,
+                "annotated_image_url": f"https://{BUCKET_NAME}.s3.amazonaws.com/{image_key}",
+                "predictions_json_url": f"https://{BUCKET_NAME}.s3.amazonaws.com/{json_key}"
             },
-            "message": "Crate detection done with color classification",
+            "message": "Crate detection done with color classification and uploaded to S3",
             "code": 200,
             "error": None
         })
