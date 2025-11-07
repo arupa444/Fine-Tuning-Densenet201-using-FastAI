@@ -149,7 +149,14 @@ async def predict_crate(
         raise HTTPException(status_code=500, detail="Failed to perform crate prediction")
 
 @app.post("/predict/marker/")
-async def predict_marker(file: UploadFile = File(...)):
+async def predict_marker(
+        scan_type: Optional[str] = Form(None),
+        app_type: Optional[str] = Form(None),
+        type_of_load: Optional[str] = Form(None),
+        store_transfer_type: Optional[str] = Form(None),
+        android_session_id: Optional[str] = Form(None),
+        file: UploadFile = File(...)
+):
     try:
         if file.content_type not in SUPPORTED_IMAGE_TYPES:
             raise HTTPException(
@@ -164,7 +171,7 @@ async def predict_marker(file: UploadFile = File(...)):
         results = marker_model.predict(source=image_np, conf=0.25, verbose=False)
         boxes, annotated_image = process_yolo_results(results)
 
-        return get_annotated_image_json(annotated_image, boxes)
+        return get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type, android_session_id, annotated_image, boxes)
     except Exception as e:
         logging.error(f"marker prediction failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to perform marker prediction")
