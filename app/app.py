@@ -237,6 +237,11 @@ async def predict_color_classification(
         outputs = session.run([output_name], {input_name: input_data})
 
         return JSONResponse(content={
+            "scan_type": scan_type,
+            "app_type": app_type,
+            "type_of_load": type_of_load,
+            "store_transfer_type": store_transfer_type,
+            "android_session_id": android_session_id,
             "model_input_name": input_name,
             "model_output_name": output_name,
             "output_shape": np.array(outputs[0]).shape,
@@ -248,7 +253,14 @@ async def predict_color_classification(
 
 
 @app.post("/predict/crate_with_color/")
-async def predict_crate_with_color(file: UploadFile = File(...)):
+async def predict_crate_with_color(
+        scan_type: Optional[str] = Form(None),
+        app_type: Optional[str] = Form(None),
+        type_of_load: Optional[str] = Form(None),
+        store_transfer_type: Optional[str] = Form(None),
+        android_session_id: Optional[str] = Form(None),
+        file: UploadFile = File(...)
+):
     try:
         # Validate image type
         if file.content_type not in SUPPORTED_IMAGE_TYPES:
@@ -292,6 +304,11 @@ async def predict_crate_with_color(file: UploadFile = File(...)):
         # Step 3: Prepare response JSON
         return JSONResponse(content={
             "data": {
+                "scan_type": scan_type,
+                "app_type": app_type,
+                "type_of_load": type_of_load,
+                "store_transfer_type": store_transfer_type,
+                "android_session_id": android_session_id,
                 "predictions": boxes_info,
                 "annotated_image": base64.b64encode(Image.fromarray(annotated_image).tobytes()).decode("utf-8"),
                 "blue_count": color_counts["BLUE"],
