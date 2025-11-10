@@ -106,19 +106,26 @@ def get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_t
         upload_to_s3(img_bytes.getvalue(), image_key, content_type="image/jpeg")
         upload_to_s3(json.dumps(result_json).encode(), json_key, content_type="application/json")
 
-        return JSONResponse(content={
+        return JSONResponse(status_code=200, content={
             "status": "success",
             "data":{
                 "predictions" : boxes_info,
-                "annotated_image" : base64.b64encode(Image.fromarray(np_image).tobytes()).decode("utf-8")
+                "image_key": image_key,
+                "image_url": get_s3_url(image_key)
             },
-            "image_key": image_key,
-            "image_url": get_s3_url(image_key)
+            "message" : "Crate detection done with color classification",
+            "code" : 200,
+            "error" : None
         })
 
     except Exception as e:
-        logging.error(f"S3 upload failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to generate annotated image JSON")
+        logging.error(f"Crate prediction failed: {e}", exc_info=True)
+        return standard_response(
+            None,
+            "Crate prediction failed",
+            400,
+            str(e)
+        )
 
 # -------------------- YOLO MODEL LOADING --------------------
 @lru_cache(maxsize=1)
@@ -313,12 +320,11 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
             "status": "success",
             "data":{
                 "predictions" : boxes_info,
-                "annotated_image": base64.b64encode(Image.fromarray(annotated_image).tobytes()).decode("utf-8"),
+                "image_key": image_key,
+                "image_url": get_s3_url(image_key),
                 "blue_count": color_counts["BLUE"],
                 "yellow_count": color_counts["YELLOW"],
-                "red_count": color_counts["RED"],
-                "image_key": image_key,
-                "image_url": get_s3_url(image_key)
+                "red_count": color_counts["RED"]
             },
             "message" : "Crate detection done with color classification",
             "code" : 200,
@@ -332,4 +338,3 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
             400,
             str(e)
         )
-
