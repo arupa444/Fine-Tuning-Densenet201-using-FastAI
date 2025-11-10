@@ -77,9 +77,9 @@ def process_yolo_results(results):
         x1, y1, x2, y2 = map(int, obb.xyxy[i])
 
 
-        color = (0, 0, 255)
+        color = (255, 0, 0)
 
-        cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), color, thickness = 10)
 
         text = f"{label}: {confidence:.2f}"
         (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
