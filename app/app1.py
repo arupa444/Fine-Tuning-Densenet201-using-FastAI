@@ -173,44 +173,119 @@ def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
 async def predict_crate(scan_type: str = Form(...), app_type: str = Form(...),
                         type_of_load: str = Form(...), store_transfer_type: str = Form(...),
                         android_session_id: str = Form(...), file: UploadFile = File(...)):
-    if file.content_type not in SUPPORTED_IMAGE_TYPES:
-        raise HTTPException(status_code=415, detail="Unsupported image type.")
-    image_bytes = await file.read()
-    image_np = read_image_for_yolo(image_bytes)
-    model = get_crate_model()
-    results = model.predict(source=image_np, conf=0.25, verbose=False)
-    boxes, annotated_image = process_yolo_results(results)
-    return get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type,
-                                    android_session_id, annotated_image, boxes)
+    try:
+        storeFieldData = []
+        if scan_type == "":
+            storeFieldData.append("scan_type")
+        if app_type == "":
+            storeFieldData.append("app_type")
+        if type_of_load == "":
+            storeFieldData.append("type_of_load")
+        if store_transfer_type == "":
+            storeFieldData.append("store_transfer_type")
+        if android_session_id == "":
+            storeFieldData.append("android_session_id")
+
+        if len(storeFieldData) == 1:
+            raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+
+        if len(storeFieldData):
+            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported image type.")
+        image_bytes = await file.read()
+        image_np = read_image_for_yolo(image_bytes)
+        model = get_crate_model()
+        results = model.predict(source=image_np, conf=0.25, verbose=False)
+        boxes, annotated_image = process_yolo_results(results)
+        return get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type,
+                                        android_session_id, annotated_image, boxes)
+    except Exception as e:
+        logging.error(f"Crate detection classification failed: {e}", exc_info=True)
+        return standard_response(
+            None,
+            "Crate detection failed",
+            400,
+            str(e)
+        )
 
 
 @app.post("/predict/marker/")
 async def predict_marker(scan_type: str = Form(...), app_type: str = Form(...),
                         type_of_load: str = Form(...), store_transfer_type: str = Form(...),
                         android_session_id: str = Form(...), file: UploadFile = File(...)):
-    if file.content_type not in SUPPORTED_IMAGE_TYPES:
-        raise HTTPException(status_code=415, detail="Unsupported image type.")
-    image_bytes = await file.read()
-    image_np = read_image_for_yolo(image_bytes)
-    model = get_marker_model()
-    results = model.predict(source=image_np, conf=0.25, verbose=False)
-    boxes, annotated_image = process_yolo_results(results)
-    return get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type,
-                                    android_session_id, annotated_image, boxes)
+    try:
+        storeFieldData = []
+        if scan_type == "":
+            storeFieldData.append("scan_type")
+        if app_type == "":
+            storeFieldData.append("app_type")
+        if type_of_load == "":
+            storeFieldData.append("type_of_load")
+        if store_transfer_type == "":
+            storeFieldData.append("store_transfer_type")
+        if android_session_id == "":
+            storeFieldData.append("android_session_id")
 
+        if len(storeFieldData) == 1:
+            raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+
+        if len(storeFieldData):
+            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+
+
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported image type.")
+        image_bytes = await file.read()
+        image_np = read_image_for_yolo(image_bytes)
+        model = get_marker_model()
+        results = model.predict(source=image_np, conf=0.25, verbose=False)
+        boxes, annotated_image = process_yolo_results(results)
+        return get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type,
+                                        android_session_id, annotated_image, boxes)
+    except Exception as e:
+        logging.error(f"Color classification failed: {e}", exc_info=True)
+        return standard_response(
+            None,
+            "Crate detection failed",
+            400,
+            str(e)
+        )
 
 
 @app.post("/marker_classification_predict")
 async def predict_marker_classification(
-        scan_type: str = Form(None),
-        app_type: str = Form(None),
-        type_of_load: str = Form(None),
-        store_transfer_type: str = Form(None),
-        android_session_id: str = Form(None),
+        scan_type: str = Form(...),
+        app_type: str = Form(...),
+        type_of_load: str = Form(...),
+        store_transfer_type: str = Form(...),
+        android_session_id: str = Form(...),
         file: UploadFile = File(...)
 ):
     """Run inference with the marker classification ONNX model."""
     try:
+        storeFieldData = []
+        if scan_type == "":
+            storeFieldData.append("scan_type")
+        if app_type == "":
+            storeFieldData.append("app_type")
+        if type_of_load == "":
+            storeFieldData.append("type_of_load")
+        if store_transfer_type == "":
+            storeFieldData.append("store_transfer_type")
+        if android_session_id == "":
+            storeFieldData.append("android_session_id")
+
+        if len(storeFieldData) == 1:
+            raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+
+        if len(storeFieldData):
+            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported image type.")
+
         session, input_name, output_name = get_onnx_session("model/marker_classification_efficientnet_21st_aug_2025_fp16.onnx")
 
         image_bytes = await file.read()
@@ -249,6 +324,27 @@ async def predict_color_classification(
 ):
     """Run inference with the color classification ONNX model."""
     try:
+        storeFieldData = []
+        if scan_type == "":
+            storeFieldData.append("scan_type")
+        if app_type == "":
+            storeFieldData.append("app_type")
+        if type_of_load == "":
+            storeFieldData.append("type_of_load")
+        if store_transfer_type == "":
+            storeFieldData.append("store_transfer_type")
+        if android_session_id == "":
+            storeFieldData.append("android_session_id")
+
+        if len(storeFieldData) == 1:
+            raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+
+        if len(storeFieldData):
+            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported image type.")
+
         session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
 
         image_bytes = await file.read()
