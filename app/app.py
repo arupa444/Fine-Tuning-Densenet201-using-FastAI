@@ -6,6 +6,8 @@ import json
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Request
 from fastapi.responses import JSONResponse
 from functools import lru_cache
+
+from torchvision import message
 from ultralytics import YOLO
 from PIL import Image, ImageOps
 import onnxruntime as ort
@@ -98,11 +100,12 @@ def get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_t
 
         return JSONResponse(content={
             "status": "success",
+            "data":{
+                "predictions" : boxes_info,
+                "annotated_image" : np_image
+            },
             "image_key": image_key,
-            "json_key": json_key,
-            "image_url": get_s3_url(image_key),
-            "json_url": get_s3_url(json_key),
-            "predictions": boxes_info
+            "image_url": get_s3_url(image_key)
         })
 
     except Exception as e:
@@ -295,13 +298,39 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
 
         upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
         upload_to_s3(json.dumps(data_json).encode(), json_key, "application/json")
+        # {
+        #     "data": {
+        #         "predictions": [
+        #             {
+        #                 "class_id": 0,
+        #                 "confidence": 0.8897111415863037
+        #             }
+        #         ],
+        #         "annotated_image": "iVBORw0KGgoAAAANSUhEUgAABDgAAAeACAIAAACkA3BdAAEAAElEQVR4nJz93bYsKa8tikkiRq3tB7cv",
+        #         "blue_count": "25",
+        #         "yellow_count": "1",
+        #         "red_count": "1"
+        #     },
+        #     "message": "Crate detection done with color classification",
+        #     "code": 200,
+        #     "error": null
+        # }
 
-        return JSONResponse(content={
+
+        return JSONResponse(status_code=200, content={
             "status": "success",
-            "image_key": image_key,
-            "json_key": json_key,
-            "image_url": get_s3_url(image_key),
-            "json_url": get_s3_url(json_key),
+            "data":{
+                "predictions" : boxes_info,
+                "annotated_image" : annotated_image,
+                "blue_count": color_counts["BLUE"],
+                "yellow_count": color_counts["YELLOW"],
+                "red_count": color_counts["RED"],
+                "image_key": image_key,
+                "image_url": get_s3_url(image_key)
+            },
+            "message" : "Crate detection done with color classification",
+            "code" : 200,
+            "error" : None
         })
     except Exception as e:
         logging.error(f"Crate with color classification failed: {e}", exc_info=True)
