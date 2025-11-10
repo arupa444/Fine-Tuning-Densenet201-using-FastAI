@@ -154,9 +154,9 @@ def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
 # -------------------- ENDPOINTS --------------------
 
 @app.post("/predict/crate/")
-async def predict_crate(scan_type: str = Form(None), app_type: str = Form(None),
-                        type_of_load: str = Form(None), store_transfer_type: str = Form(None),
-                        android_session_id: str = Form(None), file: UploadFile = File(...)):
+async def predict_crate(scan_type: str = Form(...), app_type: str = Form(...),
+                        type_of_load: str = Form(...), store_transfer_type: str = Form(...),
+                        android_session_id: str = Form(...), file: UploadFile = File(...)):
     if file.content_type not in SUPPORTED_IMAGE_TYPES:
         raise HTTPException(status_code=415, detail="Unsupported image type.")
     image_bytes = await file.read()
