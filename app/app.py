@@ -60,15 +60,47 @@ def read_image_for_yolo(file_bytes: bytes) -> np.ndarray:
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid or corrupted image file.")
 
+
+
 def process_yolo_results(results):
     boxes_info = []
     obb = results[0].obb
+    annotated = results[0].orig_img.copy()
+
     for i in range(len(obb.conf)):
-        cls = int(obb.cls[i])
-        conf = float(obb.conf[i])
-        boxes_info.append({"class_id": cls, "confidence": conf})
-    annotated = results[0].plot()
+        cx, cy, w, h, angle = map(float, obb.xywhr[i])
+        confidence = float(obb.conf[i])
+        clsId = int(obb.cls[i])
+
+        label = results[0].names[clsId]
+
+        x1, y1, x2, y2 = map(int, obb.xyxy[i])
+
+
+        color = (0, 0, 255)
+
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
+
+        text = f"{label}: {confidence:.2f}"
+        (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+        cv2.rectangle(annotated, (x1, y1 - th - 8), (x1 + tw, y1), color, -1)
+        cv2.putText(annotated, text, (x1, y1 - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+
+        boxes_info.append({
+            "class_id": clsId,
+            "class_name": label,
+            "confidence": round(confidence, 4),
+            "cx": round(cx, 4),
+            "cy": round(cy, 4),
+            "w": round(w, 4),
+            "h": round(h, 4),
+            "angle": round(angle, 4),
+            "bbox": [x1, y1, x2, y2]
+        })
+
     return boxes_info, annotated
+
 
 def standard_response(data, message, code, error=None):
     return {
