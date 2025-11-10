@@ -1,18 +1,19 @@
-import boto3
-from botocore.exceptions import NoCredentialsError
-from datetime import datetime
-import uuid
-import json
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Request
+from botocore.exceptions import NoCredentialsError
 from fastapi.responses import JSONResponse
-from functools import lru_cache
-from ultralytics import YOLO
 from PIL import Image, ImageOps
+from functools import lru_cache
+from datetime import datetime
+from ultralytics import YOLO
 import onnxruntime as ort
 import numpy as np
-import io
-import base64
 import logging
+import base64
+import boto3
+import uuid
+import json
+import cv2
+import io
 
 
 
@@ -169,9 +170,9 @@ async def predict_crate(scan_type: str = Form(...), app_type: str = Form(...),
 
 
 @app.post("/predict/marker/")
-async def predict_marker(scan_type: str = Form(None), app_type: str = Form(None),
-                        type_of_load: str = Form(None), store_transfer_type: str = Form(None),
-                        android_session_id: str = Form(None), file: UploadFile = File(...)):
+async def predict_marker(scan_type: str = Form(...), app_type: str = Form(...),
+                        type_of_load: str = Form(...), store_transfer_type: str = Form(...),
+                        android_session_id: str = Form(...), file: UploadFile = File(...)):
     if file.content_type not in SUPPORTED_IMAGE_TYPES:
         raise HTTPException(status_code=415, detail="Unsupported image type.")
     image_bytes = await file.read()
@@ -224,11 +225,11 @@ async def predict_marker_classification(
 
 @app.post("/color_classifier_predict")
 async def predict_color_classification(
-        scan_type: str = Form(None),
-        app_type: str = Form(None),
-        type_of_load: str = Form(None),
-        store_transfer_type: str = Form(None),
-        android_session_id: str = Form(None),
+        scan_type: str = Form(...),
+        app_type: str = Form(...),
+        type_of_load: str = Form(...),
+        store_transfer_type: str = Form(...),
+        android_session_id: str = Form(...),
         file: UploadFile = File(...)
 ):
     """Run inference with the color classification ONNX model."""
@@ -263,9 +264,9 @@ async def predict_color_classification(
 
 
 @app.post("/predict/crate_with_color/")
-async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = Form(None),
-                                   type_of_load: str = Form(None), store_transfer_type: str = Form(None),
-                                   android_session_id: str = Form(None), file: UploadFile = File(...)):
+async def predict_crate_with_color(scan_type: str = Form(...), app_type: str = Form(...),
+                                   type_of_load: str = Form(...), store_transfer_type: str = Form(...),
+                                   android_session_id: str = Form(...), file: UploadFile = File(...)):
     try:
         if file.content_type not in SUPPORTED_IMAGE_TYPES:
             raise HTTPException(status_code=415, detail="Unsupported image type.")
