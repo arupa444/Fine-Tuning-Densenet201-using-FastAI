@@ -79,13 +79,13 @@ def process_yolo_results(results):
 
         color = (0, 0, 255)
 
-        cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), color, thickness = 7)
 
-        text = f"{label}: {confidence:.2f}"
-        (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-        cv2.rectangle(annotated, (x1, y1 - th - 8), (x1 + tw, y1), color, -1)
-        cv2.putText(annotated, text, (x1, y1 - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+        # text = f"{label}: {confidence:.2f}"
+        # (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+        # cv2.rectangle(annotated, (x1, y1 - th - 8), (x1 + tw, y1), color, -1)
+        # cv2.putText(annotated, text, (x1, y1 - 5),
+        #             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
 
         boxes_info.append({
             "class_id": clsId,
@@ -103,12 +103,15 @@ def process_yolo_results(results):
 
 
 def standard_response(data, message, code, error=None):
-    return {
-        "data": data,
-        "message": message,
-        "code": code,
-        "error":error
-    }
+    return JSONResponse(
+        status_code=code,
+        content= {
+            "data": data,
+            "message": message,
+            "code": code,
+            "error": error
+        }
+    )
 
 def get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type,
                              android_session_id, np_image, boxes_info):
@@ -296,10 +299,29 @@ async def predict_color_classification(
 
 
 @app.post("/predict/crate_with_color/")
-async def predict_crate_with_color(scan_type: str = Form(...), app_type: str = Form(...),
-                                   type_of_load: str = Form(...), store_transfer_type: str = Form(...),
-                                   android_session_id: str = Form(...), file: UploadFile = File(...)):
+async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = Form(None),
+                                   type_of_load: str = Form(None), store_transfer_type: str = Form(None),
+                                   android_session_id: str = Form(None), file: UploadFile = File(...)):
     try:
+        # ------------------ VALIDATION ------------------
+        storeFieldData = []
+        factorsToValidate = ['', None, "nil", 'none']
+        if scan_type in factorsToValidate:
+            storeFieldData.append("scan_type")
+        if app_type in factorsToValidate:
+            storeFieldData.append("app_type")
+        if type_of_load in factorsToValidate:
+            storeFieldData.append("type_of_load")
+        if store_transfer_type in factorsToValidate:
+            storeFieldData.append("store_transfer_type")
+        if android_session_id in factorsToValidate:
+            storeFieldData.append("android_session_id")
+
+        if len(storeFieldData) == 1:
+            raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+        if len(storeFieldData) > 1:
+            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+
         if file.content_type not in SUPPORTED_IMAGE_TYPES:
             raise HTTPException(status_code=415, detail="Unsupported image type.")
         image_bytes = await file.read()
@@ -307,7 +329,7 @@ async def predict_crate_with_color(scan_type: str = Form(...), app_type: str = F
         pil_image = Image.fromarray(image_np)
 
         crate_model = get_crate_model()
-        crate_results = crate_model.predict(source=image_np, conf=0.25, verbose=False)
+        crate_results = crate_model.predict(source=image_np, conf=0.3, verbose=False)
         boxes_info, annotated_image = process_yolo_results(crate_results)
 
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
