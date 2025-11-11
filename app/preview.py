@@ -316,21 +316,13 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
                     "encoded_value": encoded_value
                 })
 
+            classified_markers.sort(key=lambda x: x['marker_bbox'][0])
             final_crates.append({
                 "crate_bbox": [x1, y1, x2, y2],
                 "color": color_label,
                 "markers": classified_markers
             })
-
-        # ---------- Prepare for S3 Upload ----------
-        timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
-        unique_id = str(uuid.uuid4())
-
-        img_name = f"crate_{unique_id}_{timestamp}.jpg"
-        json_name = f"crate_metadata_{unique_id}_{timestamp}.json"
-        image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
-        json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
-
+            final_crates.sort(key=lambda x: x['crate_bbox'][1])
 
 
         # ------------------ RETURN RESPONSE ------------------
@@ -344,8 +336,6 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
                 "android_session_id": android_session_id,
                 "crates": final_crates,
                 "color_counts": color_counts,
-                "image_key": image_key,
-                "image_url": get_s3_url(image_key),
                 "BUCKET_NAME": BUCKET_NAME
             },
             "message": "Crate detection, color classification, marker detection and classification completed",

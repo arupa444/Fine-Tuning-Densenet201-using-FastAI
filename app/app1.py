@@ -316,6 +316,8 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
                     "encoded_value": encoded_value
                 })
 
+            classified_markers.sort(key=lambda x: x['marker_bbox'][0])
+
             final_crates.append({
                 "crate_bbox": [x1, y1, x2, y2],
                 "color": color_label,
