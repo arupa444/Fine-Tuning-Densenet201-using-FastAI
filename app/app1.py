@@ -427,7 +427,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
             raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
 
         if len(storeFieldData):
-            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing {scan_type, app_type}")
+            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
 
         # if len(storeFieldData) == 1:
         #     raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
