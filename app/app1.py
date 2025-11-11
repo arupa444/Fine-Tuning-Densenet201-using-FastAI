@@ -200,47 +200,6 @@ def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
 
 # -------------------- ENDPOINTS --------------------
 
-# @app.post("/predict/crate/")
-# async def predict_crate(scan_type: str = Form(...), app_type: str = Form(...),
-#                         type_of_load: str = Form(...), store_transfer_type: str = Form(...),
-#                         android_session_id: str = Form(...), file: UploadFile = File(...)):
-#     try:
-#         storeFieldData = []
-#         if scan_type == "":
-#             storeFieldData.append("scan_type")
-#         if app_type == "":
-#             storeFieldData.append("app_type")
-#         if type_of_load == "":
-#             storeFieldData.append("type_of_load")
-#         if store_transfer_type == "":
-#             storeFieldData.append("store_transfer_type")
-#         if android_session_id == "":
-#             storeFieldData.append("android_session_id")
-
-#         if len(storeFieldData) == 1:
-#             raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
-
-#         if len(storeFieldData):
-#             raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
-
-#         if file.content_type not in SUPPORTED_IMAGE_TYPES:
-#             raise HTTPException(status_code=415, detail="Unsupported image type.")
-#         image_bytes = await file.read()
-#         image_np = read_image_for_yolo(image_bytes)
-#         model = get_crate_model()
-#         results = model.predict(source=image_np, conf=0.25, verbose=False)
-#         boxes, annotated_image = process_yolo_results(results)
-#         return get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type,
-#                                         android_session_id, annotated_image, boxes)
-#     except Exception as e:
-#         logging.error(f"Crate detection classification failed: {e}", exc_info=True)
-#         return standard_response(
-#             None,
-#             "Crate detection failed",
-#             400,
-#             str(e)
-#         )
-
 
 @app.post("/predict/marker/")
 async def predict_marker(scan_type: str = Form(None), app_type: str = Form(None),
@@ -344,65 +303,6 @@ async def predict_marker_classification(
         raise HTTPException(status_code=500, detail="Failed to perform marker classification")
 
 
-# @app.post("/color_classifier_predict")
-# async def predict_color_classification(
-#         scan_type: str = Form(...),
-#         app_type: str = Form(...),
-#         type_of_load: str = Form(...),
-#         store_transfer_type: str = Form(...),
-#         android_session_id: str = Form(...),
-#         file: UploadFile = File(...)
-# ):
-#     """Run inference with the color classification ONNX model."""
-#     try:
-#         storeFieldData = []
-#         if scan_type == "":
-#             storeFieldData.append("scan_type")
-#         if app_type == "":
-#             storeFieldData.append("app_type")
-#         if type_of_load == "":
-#             storeFieldData.append("type_of_load")
-#         if store_transfer_type == "":
-#             storeFieldData.append("store_transfer_type")
-#         if android_session_id == "":
-#             storeFieldData.append("android_session_id")
-
-#         if len(storeFieldData) == 1:
-#             raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
-
-#         if len(storeFieldData):
-#             raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
-
-#         if file.content_type not in SUPPORTED_IMAGE_TYPES:
-#             raise HTTPException(status_code=415, detail="Unsupported image type.")
-
-#         session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
-
-#         image_bytes = await file.read()
-#         image = Image.open(io.BytesIO(image_bytes))
-#         # Apply EXIF orientation
-#         image = ImageOps.exif_transpose(image)
-#         image = image.convert("RGB")
-#         input_data = preprocess_image_for_onnx(image, (244, 244))
-
-
-#         outputs = session.run([output_name], {input_name: input_data})
-
-#         return JSONResponse(content={
-#             "scan_type": scan_type,
-#             "app_type": app_type,
-#             "type_of_load": type_of_load,
-#             "store_transfer_type": store_transfer_type,
-#             "android_session_id": android_session_id,
-#             "model_input_name": input_name,
-#             "model_output_name": output_name,
-#             "output_shape": np.array(outputs[0]).shape,
-#             "output": np.array(outputs[0]).tolist()
-#         })
-#     except Exception as e:
-#         logging.error(f"color classifier failed: {e}", exc_info=True)
-#         raise HTTPException(status_code=500, detail="Failed to perform color classifier")
-
 
 
 @app.post("/predict/crate_with_color/")
@@ -410,6 +310,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
                                    type_of_load: str = Form(None), store_transfer_type: str = Form(None),
                                    android_session_id: str = Form(None), file: UploadFile = File(...)):
     try:
+        # ------------------ VALIDATION ------------------
         storeFieldData = []
         factorsToValidate = ['', None, "nil", 'none']
         if scan_type in factorsToValidate:
@@ -420,81 +321,131 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
             storeFieldData.append("type_of_load")
         if store_transfer_type in factorsToValidate:
             storeFieldData.append("store_transfer_type")
-        if android_session_id  in factorsToValidate:
+        if android_session_id in factorsToValidate:
             storeFieldData.append("android_session_id")
 
         if len(storeFieldData) == 1:
             raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
-
-        if len(storeFieldData):
+        if len(storeFieldData) > 1:
             raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
 
-        # if len(storeFieldData) == 1:
-        #     raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
-
-        # if len(storeFieldData) > 1:
-        #     raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
-
         if file.content_type not in SUPPORTED_IMAGE_TYPES:
             raise HTTPException(status_code=415, detail="Unsupported image type.")
 
-
-        if file.content_type not in SUPPORTED_IMAGE_TYPES:
-            raise HTTPException(status_code=415, detail="Unsupported image type.")
+        # ------------------ LOAD IMAGE ------------------
         image_bytes = await file.read()
         image_np = read_image_for_yolo(image_bytes)
         pil_image = Image.fromarray(image_np)
 
+        # ------------------ CRATE DETECTION ------------------
         crate_model = get_crate_model()
         crate_results = crate_model.predict(source=image_np, conf=0.25, verbose=False)
         boxes_info, annotated_image = process_yolo_results(crate_results)
 
+        # ------------------ COLOR CLASSIFICATION ------------------
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
         color_labels = ["BLUE", "RED", "YELLOW"]
+        color_session, color_input, color_output = get_onnx_session("model/color_classifier.onnx")
 
-        session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
+        # ------------------ MARKER MODELS ------------------¯¯¯¯
+        marker_model = get_marker_model()
+        marker_cls_session, marker_cls_input, marker_cls_output = get_onnx_session(
+            "model/marker_classification_efficientnet_21st_aug_2025_fp16.onnx"
+        )
 
-        for box in crate_results[0].obb.xyxy:
-            x1, y1, x2, y2 = map(int, box)
-            crop = pil_image.crop((x1, y1, x2, y2))
-            input_data = preprocess_image_for_onnx(crop, (244, 244))
-            outputs = session.run([output_name], {input_name: input_data})
-            class_idx = int(np.argmax(outputs[0]))
-            color_counts[color_labels[class_idx]] += 1
-
-        # Prepare annotated image and JSON for S3 upload
-        img = Image.fromarray(annotated_image)
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format="JPEG")
-        img_bytes.seek(0)
-
-        data_json = {
-            "scan_type": scan_type,
-            "app_type": app_type,
-            "type_of_load": type_of_load,
-            "store_transfer_type": store_transfer_type,
-            "android_session_id": android_session_id,
-            "predictions": boxes_info,
-            "color_counts": color_counts
+        # ------------------ LABEL MAP ------------------
+        labelDecodeMap = {
+            "filled_circle": "0",
+            "filled_rectangle_vertical": "1",
+            "filled_semicircle_arc_bottom": "2",
+            "filled_semicircle_arc_left": "3",
+            "filled_semicircle_arc_right": "4",
+            "filled_semicircle_arc_top": "5",
+            "filled_triangle_base_bottom": "7",
+            "filled_triangle_base_left": "8",
+            "filled_triangle_base_right": "9",
+            "filled_triangle_base_top": "A",
+            "hollow_circle": "B",
+            "hollow_rectangle_vertical": "C",
+            "hollow_semicircle_arc_bottom": "D",
+            "hollow_semicircle_arc_left": "E",
+            "hollow_semicircle_arc_right": "F",
+            "hollow_semicircle_arc_top": "G",
+            "hollow_triangle_base_bottom": "I",
+            "hollow_triangle_base_left": "J",
+            "hollow_triangle_base_right": "K",
+            "hollow_triangle_base_top": "L",
+            "other": "other"
         }
 
+        # ------------------ PROCESS EACH CRATE ------------------
+        final_crates = []
+        for crate_box in crate_results[0].obb.xyxy:
+            x1, y1, x2, y2 = map(int, crate_box)
+            crate_crop = pil_image.crop((x1, y1, x2, y2))
+
+            # ---- Step 1: Color Classification ----
+            input_data = preprocess_image_for_onnx(crate_crop, (244, 244))
+            color_out = color_session.run([color_output], {color_input: input_data})
+            color_idx = int(np.argmax(color_out[0]))
+            color_label = color_labels[color_idx]
+            color_counts[color_label] += 1
+
+            # ---- Step 2: Marker Detection ----
+            marker_np = np.array(crate_crop)
+            marker_results = marker_model.predict(source=marker_np, conf=0.25, verbose=False)
+            marker_boxes_info, _ = process_yolo_results(marker_results)
+
+            # ---- Step 3: Marker Classification ----
+            classified_markers = []
+            for m_box in marker_results[0].obb.xyxy:
+                mx1, my1, mx2, my2 = map(int, m_box)
+                marker_crop = crate_crop.crop((mx1, my1, mx2, my2))
+                marker_input = preprocess_image_for_onnx(marker_crop, (64, 64))
+                cls_output = marker_cls_session.run([marker_cls_output], {marker_cls_input: marker_input})
+                cls_idx = int(np.argmax(cls_output[0]))
+
+                # decode label
+                if 0 <= cls_idx < len(labelDecodeMap.keys()):
+                    decoded_label = list(labelDecodeMap.keys())[cls_idx]
+                    encoded_value = labelDecodeMap[decoded_label]
+                else:
+                    decoded_label = "unknown"
+                    encoded_value = "?"
+
+                classified_markers.append({
+                    "marker_bbox": [mx1, my1, mx2, my2],
+                    "class_index": cls_idx,
+                    "decoded_label": decoded_label,
+                    "encoded_value": encoded_value
+                })
+
+            final_crates.append({
+                "crate_bbox": [x1, y1, x2, y2],
+                "color": color_label,
+                "markers": classified_markers
+            })
 
 
-
+        # ------------------ RETURN RESPONSE ------------------
         return JSONResponse(status_code=200, content={
             "status": "success",
-            "data":{
-                "predictions" : data_json,
-                "blue_count": color_counts["BLUE"],
-                "yellow_count": color_counts["YELLOW"],
-                "red_count": color_counts["RED"]
+            "data": {
+                "scan_type": scan_type,
+                "app_type": app_type,
+                "type_of_load": type_of_load,
+                "store_transfer_type": store_transfer_type,
+                "android_session_id": android_session_id,
+                "crates": final_crates,
+                "color_counts": color_counts
             },
-            "message" : "Crate detection done with color classification",
-            "code" : 200,
-            "error" : None
+            "message": "Crate detection, color classification, marker detection and classification completed",
+            "code": 200,
+            "error": None
         })
+
     except Exception as e:
-        logging.error(f"Crate with color classification failed: {e}", exc_info=True)
+        logging.error(f"Crate with color + marker classification failed: {e}", exc_info=True)
         return standard_response(
             None,
             "Crate detection failed",
