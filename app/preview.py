@@ -331,34 +331,6 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
         json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
 
-        # Convert annotated image to bytes
-        img = Image.fromarray(annotated_image)
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format="JPEG")
-        img_bytes.seek(0)
-        img_size_kb = len(img_bytes.getvalue()) / 1024
-
-        data_json = {
-            "scan_type": scan_type,
-            "app_type": app_type,
-            "type_of_load": type_of_load,
-            "store_transfer_type": store_transfer_type,
-            "android_session_id": android_session_id,
-            "timestamp": timestamp,
-            "unique_id": unique_id,
-            "predictions": boxes_info,
-            "color_counts": color_counts,
-            "image_key": image_key,
-            "json_key": json_key,
-            "image_size_kb": round(img_size_kb, 2),
-            "bucket": BUCKET_NAME,
-            "image_url": get_s3_url(image_key),
-            "json_url": get_s3_url(json_key)
-        }
-
-        # ---------- Upload to S3 ----------
-        upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
-        upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
 
 
         # ------------------ RETURN RESPONSE ------------------
