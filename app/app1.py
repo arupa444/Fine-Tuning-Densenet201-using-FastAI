@@ -21,6 +21,37 @@ import io
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 app = FastAPI()
 
+def standard_response(data, message, code, error=None):
+    return JSONResponse(
+        status_code=code,
+        content= {
+            "data": data,
+            "message": message,
+            "code": code,
+            "error": error
+        }
+    )
+
+# Handle FastAPI HTTP errors (400, 401, 404, etc)
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return standard_response(
+        data=None,
+        message="Crate detection failed",
+        code=exc.status_code,
+        error=str(exc.detail)
+    )
+
+# Handle all unhandled exceptions (500)
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    return standard_response(
+        data=None,
+        message="Crate detection failed",
+        code=500,
+        error=str(exc)
+    )
+
 BUCKET_NAME = "tracksure-jfl-dev"
 s3 = boto3.client("s3")
 
@@ -96,13 +127,13 @@ def process_yolo_results(results):
     return boxes_info, annotated
 
 
-def standard_response(data, message, code, error=None):
-    return {
-        "data": data,
-        "message": message,
-        "code": code,
-        "error":error
-    }
+# def standard_response(data, message, code, error=None):
+#     return {
+#         "data": data,
+#         "message": message,
+#         "code": code,
+#         "error":error
+#     }
 
 def get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type,
                              android_session_id, np_image, boxes_info):
@@ -169,52 +200,52 @@ def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
 
 # -------------------- ENDPOINTS --------------------
 
-@app.post("/predict/crate/")
-async def predict_crate(scan_type: str = Form(...), app_type: str = Form(...),
-                        type_of_load: str = Form(...), store_transfer_type: str = Form(...),
-                        android_session_id: str = Form(...), file: UploadFile = File(...)):
-    try:
-        storeFieldData = []
-        if scan_type == "":
-            storeFieldData.append("scan_type")
-        if app_type == "":
-            storeFieldData.append("app_type")
-        if type_of_load == "":
-            storeFieldData.append("type_of_load")
-        if store_transfer_type == "":
-            storeFieldData.append("store_transfer_type")
-        if android_session_id == "":
-            storeFieldData.append("android_session_id")
+# @app.post("/predict/crate/")
+# async def predict_crate(scan_type: str = Form(...), app_type: str = Form(...),
+#                         type_of_load: str = Form(...), store_transfer_type: str = Form(...),
+#                         android_session_id: str = Form(...), file: UploadFile = File(...)):
+#     try:
+#         storeFieldData = []
+#         if scan_type == "":
+#             storeFieldData.append("scan_type")
+#         if app_type == "":
+#             storeFieldData.append("app_type")
+#         if type_of_load == "":
+#             storeFieldData.append("type_of_load")
+#         if store_transfer_type == "":
+#             storeFieldData.append("store_transfer_type")
+#         if android_session_id == "":
+#             storeFieldData.append("android_session_id")
 
-        if len(storeFieldData) == 1:
-            raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+#         if len(storeFieldData) == 1:
+#             raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
 
-        if len(storeFieldData):
-            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+#         if len(storeFieldData):
+#             raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
 
-        if file.content_type not in SUPPORTED_IMAGE_TYPES:
-            raise HTTPException(status_code=415, detail="Unsupported image type.")
-        image_bytes = await file.read()
-        image_np = read_image_for_yolo(image_bytes)
-        model = get_crate_model()
-        results = model.predict(source=image_np, conf=0.25, verbose=False)
-        boxes, annotated_image = process_yolo_results(results)
-        return get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type,
-                                        android_session_id, annotated_image, boxes)
-    except Exception as e:
-        logging.error(f"Crate detection classification failed: {e}", exc_info=True)
-        return standard_response(
-            None,
-            "Crate detection failed",
-            400,
-            str(e)
-        )
+#         if file.content_type not in SUPPORTED_IMAGE_TYPES:
+#             raise HTTPException(status_code=415, detail="Unsupported image type.")
+#         image_bytes = await file.read()
+#         image_np = read_image_for_yolo(image_bytes)
+#         model = get_crate_model()
+#         results = model.predict(source=image_np, conf=0.25, verbose=False)
+#         boxes, annotated_image = process_yolo_results(results)
+#         return get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_type,
+#                                         android_session_id, annotated_image, boxes)
+#     except Exception as e:
+#         logging.error(f"Crate detection classification failed: {e}", exc_info=True)
+#         return standard_response(
+#             None,
+#             "Crate detection failed",
+#             400,
+#             str(e)
+#         )
 
 
 @app.post("/predict/marker/")
-async def predict_marker(scan_type: str = Form(...), app_type: str = Form(...),
-                        type_of_load: str = Form(...), store_transfer_type: str = Form(...),
-                        android_session_id: str = Form(...), file: UploadFile = File(...)):
+async def predict_marker(scan_type: str = Form(None), app_type: str = Form(None),
+                         type_of_load: str = Form(None), store_transfer_type: str = Form(None),
+                         android_session_id: str = Form(None), file: UploadFile = File(...)):
     try:
         storeFieldData = []
         if scan_type == "":
@@ -313,89 +344,99 @@ async def predict_marker_classification(
         raise HTTPException(status_code=500, detail="Failed to perform marker classification")
 
 
-@app.post("/color_classifier_predict")
-async def predict_color_classification(
-        scan_type: str = Form(...),
-        app_type: str = Form(...),
-        type_of_load: str = Form(...),
-        store_transfer_type: str = Form(...),
-        android_session_id: str = Form(...),
-        file: UploadFile = File(...)
-):
-    """Run inference with the color classification ONNX model."""
-    try:
-        storeFieldData = []
-        if scan_type == "":
-            storeFieldData.append("scan_type")
-        if app_type == "":
-            storeFieldData.append("app_type")
-        if type_of_load == "":
-            storeFieldData.append("type_of_load")
-        if store_transfer_type == "":
-            storeFieldData.append("store_transfer_type")
-        if android_session_id == "":
-            storeFieldData.append("android_session_id")
+# @app.post("/color_classifier_predict")
+# async def predict_color_classification(
+#         scan_type: str = Form(...),
+#         app_type: str = Form(...),
+#         type_of_load: str = Form(...),
+#         store_transfer_type: str = Form(...),
+#         android_session_id: str = Form(...),
+#         file: UploadFile = File(...)
+# ):
+#     """Run inference with the color classification ONNX model."""
+#     try:
+#         storeFieldData = []
+#         if scan_type == "":
+#             storeFieldData.append("scan_type")
+#         if app_type == "":
+#             storeFieldData.append("app_type")
+#         if type_of_load == "":
+#             storeFieldData.append("type_of_load")
+#         if store_transfer_type == "":
+#             storeFieldData.append("store_transfer_type")
+#         if android_session_id == "":
+#             storeFieldData.append("android_session_id")
 
-        if len(storeFieldData) == 1:
-            raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+#         if len(storeFieldData) == 1:
+#             raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
 
-        if len(storeFieldData):
-            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+#         if len(storeFieldData):
+#             raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
 
-        if file.content_type not in SUPPORTED_IMAGE_TYPES:
-            raise HTTPException(status_code=415, detail="Unsupported image type.")
+#         if file.content_type not in SUPPORTED_IMAGE_TYPES:
+#             raise HTTPException(status_code=415, detail="Unsupported image type.")
 
-        session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
+#         session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
 
-        image_bytes = await file.read()
-        image = Image.open(io.BytesIO(image_bytes))
-        # Apply EXIF orientation
-        image = ImageOps.exif_transpose(image)
-        image = image.convert("RGB")
-        input_data = preprocess_image_for_onnx(image, (244, 244))
+#         image_bytes = await file.read()
+#         image = Image.open(io.BytesIO(image_bytes))
+#         # Apply EXIF orientation
+#         image = ImageOps.exif_transpose(image)
+#         image = image.convert("RGB")
+#         input_data = preprocess_image_for_onnx(image, (244, 244))
 
 
-        outputs = session.run([output_name], {input_name: input_data})
+#         outputs = session.run([output_name], {input_name: input_data})
 
-        return JSONResponse(content={
-            "scan_type": scan_type,
-            "app_type": app_type,
-            "type_of_load": type_of_load,
-            "store_transfer_type": store_transfer_type,
-            "android_session_id": android_session_id,
-            "model_input_name": input_name,
-            "model_output_name": output_name,
-            "output_shape": np.array(outputs[0]).shape,
-            "output": np.array(outputs[0]).tolist()
-        })
-    except Exception as e:
-        logging.error(f"color classifier failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to perform color classifier")
+#         return JSONResponse(content={
+#             "scan_type": scan_type,
+#             "app_type": app_type,
+#             "type_of_load": type_of_load,
+#             "store_transfer_type": store_transfer_type,
+#             "android_session_id": android_session_id,
+#             "model_input_name": input_name,
+#             "model_output_name": output_name,
+#             "output_shape": np.array(outputs[0]).shape,
+#             "output": np.array(outputs[0]).tolist()
+#         })
+#     except Exception as e:
+#         logging.error(f"color classifier failed: {e}", exc_info=True)
+#         raise HTTPException(status_code=500, detail="Failed to perform color classifier")
 
 
 
 @app.post("/predict/crate_with_color/")
-async def predict_crate_with_color(scan_type: str = Form(...), app_type: str = Form(...),
-                                   type_of_load: str = Form(...), store_transfer_type: str = Form(...),
-                                   android_session_id: str = Form(...), file: UploadFile = File(...)):
+async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = Form(None),
+                                   type_of_load: str = Form(None), store_transfer_type: str = Form(None),
+                                   android_session_id: str = Form(None), file: UploadFile = File(...)):
     try:
         storeFieldData = []
-        if scan_type == "":
+        factorsToValidate = ['', None, "nil", 'none']
+        if scan_type in factorsToValidate:
             storeFieldData.append("scan_type")
-        if app_type == "":
+        if app_type in factorsToValidate:
             storeFieldData.append("app_type")
-        if type_of_load == "":
+        if type_of_load in factorsToValidate:
             storeFieldData.append("type_of_load")
-        if store_transfer_type == "":
+        if store_transfer_type in factorsToValidate:
             storeFieldData.append("store_transfer_type")
-        if android_session_id == "":
+        if android_session_id  in factorsToValidate:
             storeFieldData.append("android_session_id")
 
         if len(storeFieldData) == 1:
             raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
 
         if len(storeFieldData):
-            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing {scan_type, app_type}")
+
+        # if len(storeFieldData) == 1:
+        #     raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+
+        # if len(storeFieldData) > 1:
+        #     raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported image type.")
 
 
         if file.content_type not in SUPPORTED_IMAGE_TYPES:
