@@ -345,6 +345,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
                 "color_counts": color_counts,
                 "image_key": image_key,
                 "image_url": get_s3_url(image_key),
+                "BUCKET_NAME": BUCKET_NAME
             },
             "message": "Crate detection, color classification, marker detection and classification completed",
             "code": 200,
