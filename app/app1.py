@@ -313,16 +313,17 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
                     "marker_bbox": [mx1, my1, mx2, my2],
                     "class_index": cls_idx,
                     "decoded_label": decoded_label,
-                    "encoded_value": encoded_value
+                    "encoded_value": encoded_value,
                 })
 
             classified_markers.sort(key=lambda x: x['marker_bbox'][0])
-
             final_crates.append({
                 "crate_bbox": [x1, y1, x2, y2],
                 "color": color_label,
+                "shape_code":''.join(str(m["encoded_value"]) for m in classified_markers),
                 "markers": classified_markers
             })
+            final_crates.sort(key=lambda x: x['crate_bbox'][1])
 
         # ---------- Prepare for S3 Upload ----------
         timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
@@ -367,11 +368,6 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         return JSONResponse(status_code=200, content={
             "status": "success",
             "data": {
-                "scan_type": scan_type,
-                "app_type": app_type,
-                "type_of_load": type_of_load,
-                "store_transfer_type": store_transfer_type,
-                "android_session_id": android_session_id,
                 "crates": final_crates,
                 "color_counts": color_counts,
                 "image_key": image_key,
