@@ -294,14 +294,14 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
 
             # ---- Step 3: Marker Classification ----
             classified_markers = []
-            for m_box in marker_results[0].obb.xyxy:
+            for i, m_box in enumerate(marker_results[0].obb.xyxy):
                 mx1, my1, mx2, my2 = map(int, m_box)
                 marker_crop = crate_crop.crop((mx1, my1, mx2, my2))
                 marker_input = preprocess_image_for_onnx(marker_crop, (64, 64))
                 cls_output = marker_cls_session.run([marker_cls_output], {marker_cls_input: marker_input})
                 cls_idx = int(np.argmax(cls_output[0]))
 
-                # decode label
+                # Decode label
                 if 0 <= cls_idx < len(labelDecodeMap.keys()):
                     decoded_label = list(labelDecodeMap.keys())[cls_idx]
                     encoded_value = labelDecodeMap[decoded_label]
@@ -309,14 +309,24 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
                     decoded_label = "unknown"
                     encoded_value = "?"
 
+                # Get YOLO OBB details
+                m_confidence = float(marker_results[0].obb.conf[i])
+                m_cx, m_cy, m_w, m_h, m_angle = map(float, marker_results[0].obb.xywhr[i])
+
                 classified_markers.append({
+                    "confidence": round(m_confidence, 4),
+                    "cx": round(m_cx, 4),
+                    "cy": round(m_cy, 4),
+                    "w": round(m_w, 4),
+                    "h": round(m_h, 4),
+                    "angle": round(m_angle, 4),
                     "marker_bbox": [mx1, my1, mx2, my2],
                     "class_index": cls_idx,
                     "decoded_label": decoded_label,
-                    "encoded_value": encoded_value,
+                    "encoded_value": encoded_value
                 })
 
-            classified_markers.sort(key=lambda x: x['marker_bbox'][0])
+            classified_markers.sort(key=lambda x: x['cx'])
             final_crates.append({
                 "crate_bbox": [x1, y1, x2, y2],
                 "color": color_label,
@@ -325,14 +335,6 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
             })
             final_crates.sort(key=lambda x: x['crate_bbox'][1])
 
-        # ---------- Prepare for S3 Upload ----------
-        timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
-        unique_id = str(uuid.uuid4())
-
-        img_name = f"crate_{unique_id}_{timestamp}.jpg"
-        json_name = f"crate_metadata_{unique_id}_{timestamp}.json"
-        image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
-        json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
 
         # Convert annotated image to bytes
         img = Image.fromarray(annotated_image)
@@ -342,37 +344,22 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         img_size_kb = len(img_bytes.getvalue()) / 1024
 
         data_json = {
+            "bucket": BUCKET_NAME,
             "scan_type": scan_type,
             "app_type": app_type,
             "type_of_load": type_of_load,
             "store_transfer_type": store_transfer_type,
             "android_session_id": android_session_id,
-            "timestamp": timestamp,
-            "unique_id": unique_id,
-            "predictions": boxes_info,
+            "crates": final_crates,
             "color_counts": color_counts,
-            "image_key": image_key,
-            "json_key": json_key,
-            "image_size_kb": round(img_size_kb, 2),
-            "bucket": BUCKET_NAME,
-            "image_url": get_s3_url(image_key),
-            "json_url": get_s3_url(json_key)
+            "image_size_kb": round(img_size_kb, 2)
         }
-
-        # ---------- Upload to S3 ----------
-        upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
-        upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
-
 
         # ------------------ RETURN RESPONSE ------------------
         return JSONResponse(status_code=200, content={
             "status": "success",
             "data": {
-                "crates": final_crates,
-                "color_counts": color_counts,
-                "image_key": image_key,
-                "image_url": get_s3_url(image_key),
-                "BUCKET_NAME": BUCKET_NAME
+                "crates": final_crates
             },
             "message": "Crate detection, color classification, marker detection and classification completed",
             "code": 200,
