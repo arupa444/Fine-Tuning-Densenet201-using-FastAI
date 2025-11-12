@@ -333,8 +333,10 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
                 "shape_code":''.join(str(m["encoded_value"]) for m in classified_markers),
                 "markers": classified_markers
             })
-            final_crates.sort(key=lambda x: x['crate_bbox'][1])
+        final_crates.sort(key=lambda x: x['crate_bbox'][1])
 
+        for crate in final_crates:
+            crate.pop("crate_bbox", None)
 
         # Convert annotated image to bytes
         img = Image.fromarray(annotated_image)
