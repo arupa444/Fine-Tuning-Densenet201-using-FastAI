@@ -298,7 +298,7 @@ async def predict_color_classification(
 
 
 
-@app.post("/predict/crate_with_color/")
+@app.post("/predict/crate_detection_classification/")
 async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = Form(None),
                                    type_of_load: str = Form(None), store_transfer_type: str = Form(None),
                                    android_session_id: str = Form(None), file: UploadFile = File(...)):
@@ -387,6 +387,202 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         })
     except Exception as e:
         logging.error(f"Crate classification failed: {e}", exc_info=True)
+        return standard_response(
+            None,
+            "Crate detection failed",
+            400,
+            str(e)
+        )
+
+@app.post("/predict/marker_detection_classification/")
+async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = Form(None),
+                                   type_of_load: str = Form(None), store_transfer_type: str = Form(None),
+                                   android_session_id: str = Form(None), file: UploadFile = File(...)):
+    try:
+        # ------------------ VALIDATION ------------------
+        storeFieldData = []
+        factorsToValidate = ['', None, "nil", 'none']
+        if scan_type in factorsToValidate:
+            storeFieldData.append("scan_type")
+        if app_type in factorsToValidate:
+            storeFieldData.append("app_type")
+        if type_of_load in factorsToValidate:
+            storeFieldData.append("type_of_load")
+        if store_transfer_type in factorsToValidate:
+            storeFieldData.append("store_transfer_type")
+        if android_session_id in factorsToValidate:
+            storeFieldData.append("android_session_id")
+
+        if len(storeFieldData) == 1:
+            raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+        if len(storeFieldData) > 1:
+            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported image type.")
+
+        # ------------------ LOAD IMAGE ------------------
+        image_bytes = await file.read()
+        image_np = read_image_for_yolo(image_bytes)
+        pil_image = Image.fromarray(image_np)
+
+        # ------------------ CRATE DETECTION ------------------
+        crate_model = get_crate_model()
+        crate_results = crate_model.predict(source=image_np, conf=0.25, verbose=False)
+        boxes_info, annotated_image = process_yolo_results(crate_results)
+
+        # ------------------ COLOR CLASSIFICATION ------------------
+        color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
+        color_labels = ["BLUE", "RED", "YELLOW"]
+        color_session, color_input, color_output = get_onnx_session("model/color_classifier.onnx")
+
+        # ------------------ MARKER MODELS ------------------¯¯¯¯
+        marker_model = get_marker_model()
+        marker_cls_session, marker_cls_input, marker_cls_output = get_onnx_session(
+            "model/marker_classification_efficientnet_21st_aug_2025_fp16.onnx"
+        )
+
+        # ------------------ LABEL MAP ------------------
+        labelDecodeMap = {
+            "filled_circle": "0",
+            "filled_rectangle_vertical": "1",
+            "filled_semicircle_arc_bottom": "2",
+            "filled_semicircle_arc_left": "3",
+            "filled_semicircle_arc_right": "4",
+            "filled_semicircle_arc_top": "5",
+            "filled_triangle_base_bottom": "7",
+            "filled_triangle_base_left": "8",
+            "filled_triangle_base_right": "9",
+            "filled_triangle_base_top": "A",
+            "hollow_circle": "B",
+            "hollow_rectangle_vertical": "C",
+            "hollow_semicircle_arc_bottom": "D",
+            "hollow_semicircle_arc_left": "E",
+            "hollow_semicircle_arc_right": "F",
+            "hollow_semicircle_arc_top": "G",
+            "hollow_triangle_base_bottom": "I",
+            "hollow_triangle_base_left": "J",
+            "hollow_triangle_base_right": "K",
+            "hollow_triangle_base_top": "L",
+            "other": "other"
+        }
+
+        # ------------------ PROCESS EACH CRATE ------------------
+        final_crates = []
+        for crate_box in crate_results[0].obb.xyxy:
+            x1, y1, x2, y2 = map(int, crate_box)
+            crate_crop = pil_image.crop((x1, y1, x2, y2))
+
+            # ---- Step 1: Color Classification ----
+            input_data = preprocess_image_for_onnx(crate_crop, (244, 244))
+            color_out = color_session.run([color_output], {color_input: input_data})
+            color_idx = int(np.argmax(color_out[0]))
+            color_label = color_labels[color_idx]
+            color_counts[color_label] += 1
+
+            # ---- Step 2: Marker Detection ----
+            marker_np = np.array(crate_crop)
+            marker_results = marker_model.predict(source=marker_np, conf=0.25, verbose=False)
+            marker_boxes_info, _ = process_yolo_results(marker_results)
+
+            # ---- Step 3: Marker Classification ----
+            classified_markers = []
+            for i, m_box in enumerate(marker_results[0].obb.xyxy):
+                mx1, my1, mx2, my2 = map(int, m_box)
+                marker_crop = crate_crop.crop((mx1, my1, mx2, my2))
+                marker_input = preprocess_image_for_onnx(marker_crop, (64, 64))
+                cls_output = marker_cls_session.run([marker_cls_output], {marker_cls_input: marker_input})
+                cls_idx = int(np.argmax(cls_output[0]))
+
+                # Decode label
+                if 0 <= cls_idx < len(labelDecodeMap.keys()):
+                    decoded_label = list(labelDecodeMap.keys())[cls_idx]
+                    encoded_value = labelDecodeMap[decoded_label]
+                else:
+                    decoded_label = "unknown"
+                    encoded_value = "?"
+
+                # Get YOLO OBB details
+                m_confidence = float(marker_results[0].obb.conf[i])
+                m_cx, m_cy, m_w, m_h, m_angle = map(float, marker_results[0].obb.xywhr[i])
+
+                classified_markers.append({
+                    "confidence": round(m_confidence, 4),
+                    "cx": round(m_cx, 4),
+                    "cy": round(m_cy, 4),
+                    "w": round(m_w, 4),
+                    "h": round(m_h, 4),
+                    "angle": round(m_angle, 4),
+                    "marker_bbox": [mx1, my1, mx2, my2],
+                    "class_index": cls_idx,
+                    "decoded_label": decoded_label,
+                    "encoded_value": encoded_value
+                })
+
+            classified_markers.sort(key=lambda x: x['cx'])
+            final_crates.append({
+                "crate_bbox": [x1, y1, x2, y2],
+                "color": color_label,
+                "shape_code":''.join(str(m["encoded_value"]) for m in classified_markers),
+                "markers": classified_markers
+            })
+        final_crates.sort(key=lambda x: x['crate_bbox'][1])
+
+        for crate in final_crates:
+            crate.pop("crate_bbox", None)
+
+
+        # ---------- Prepare for S3 Upload ----------
+        timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+        unique_id = str(uuid.uuid4())
+
+        img_name = f"crate_{unique_id}_{timestamp}.jpg"
+        json_name = f"crate_metadata_{unique_id}_{timestamp}.json"
+        image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
+        json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
+
+
+        # Convert annotated image to bytes
+        img = Image.fromarray(annotated_image)
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format="JPEG")
+        img_bytes.seek(0)
+        img_size_kb = len(img_bytes.getvalue()) / 1024
+
+        data_json = {
+            "bucket": BUCKET_NAME,
+            "scan_type": scan_type,
+            "app_type": app_type,
+            "type_of_load": type_of_load,
+            "store_transfer_type": store_transfer_type,
+            "android_session_id": android_session_id,
+            "crates": final_crates,
+            "color_counts": color_counts,
+            "image_size_kb": round(img_size_kb, 2),
+            "image_key": image_key,
+            "json_key": json_key,
+            "image_url": get_s3_url(image_key),
+            "json_url": get_s3_url(json_key)
+        }
+        # ---------- Upload to S3 ----------
+        upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
+        upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
+
+        # ------------------ RETURN RESPONSE ------------------
+        return JSONResponse(status_code=200, content={
+            "status": "success",
+            "data": {
+                "crates": final_crates,
+                "image_key": image_key,
+                "image_url": get_s3_url(image_key),
+            },
+            "message": "Crate detection, color classification, marker detection and classification completed",
+            "code": 200,
+            "error": None
+        })
+
+    except Exception as e:
+        logging.error(f"Crate with color + marker classification failed: {e}", exc_info=True)
         return standard_response(
             None,
             "Crate detection failed",
