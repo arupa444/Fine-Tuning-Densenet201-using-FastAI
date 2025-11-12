@@ -289,7 +289,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
 
             # ---- Step 2: Marker Detection ----
             marker_np = np.array(crate_crop)
-            marker_results = marker_model.predict(source=marker_np, conf=0.25, verbose=False)
+            marker_results = marker_model.predict(source=marker_np, conf=0.5, verbose=False)
             marker_boxes_info, _ = process_yolo_results(marker_results)
 
             # ---- Step 3: Marker Classification ----
@@ -339,16 +339,6 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
             crate.pop("crate_bbox", None)
 
 
-        # ---------- Prepare for S3 Upload ----------
-        timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
-        unique_id = str(uuid.uuid4())
-
-        img_name = f"crate_{unique_id}_{timestamp}.jpg"
-        json_name = f"crate_metadata_{unique_id}_{timestamp}.json"
-        image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
-        json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
-
-
         # Convert annotated image to bytes
         img = Image.fromarray(annotated_image)
         img_bytes = io.BytesIO()
@@ -365,23 +355,14 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
             "android_session_id": android_session_id,
             "crates": final_crates,
             "color_counts": color_counts,
-            "image_size_kb": round(img_size_kb, 2),
-            "image_key": image_key,
-            "json_key": json_key,
-            "image_url": get_s3_url(image_key),
-            "json_url": get_s3_url(json_key)
+            "image_size_kb": round(img_size_kb, 2)
         }
-        # ---------- Upload to S3 ----------
-        upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
-        upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
 
         # ------------------ RETURN RESPONSE ------------------
         return JSONResponse(status_code=200, content={
             "status": "success",
             "data": {
-                "crates": final_crates,
-                "image_key": image_key,
-                "image_url": get_s3_url(image_key),
+                "crates": final_crates
             },
             "message": "Crate detection, color classification, marker detection and classification completed",
             "code": 200,

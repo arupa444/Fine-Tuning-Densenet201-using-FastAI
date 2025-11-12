@@ -286,7 +286,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         )
 
 @app.post("/predict/marker_detection_classification/")
-async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = Form(None),
+async def predict_marker(scan_type: str = Form(None), app_type: str = Form(None),
                                    type_of_load: str = Form(None), store_transfer_type: str = Form(None),
                                    android_session_id: str = Form(None), file: UploadFile = File(...)):
     try:
@@ -373,7 +373,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
 
             # ---- Step 2: Marker Detection ----
             marker_np = np.array(crate_crop)
-            marker_results = marker_model.predict(source=marker_np, conf=0.25, verbose=False)
+            marker_results = marker_model.predict(source=marker_np, conf=0.5, verbose=False)
             marker_boxes_info, _ = process_yolo_results(marker_results)
 
             # ---- Step 3: Marker Classification ----
