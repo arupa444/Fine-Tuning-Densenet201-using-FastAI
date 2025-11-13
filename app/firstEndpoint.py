@@ -67,26 +67,49 @@ def process_yolo_results(results):
     obb = results[0].obb
     annotated = results[0].orig_img.copy()
 
+    # Define font and visual settings
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.7
+    font_thickness = 2
+    box_color = (0, 0, 255)      # 🔴 Red in BGR
+    text_color = (255, 255, 255) # White
+
     for i in range(len(obb.conf)):
         cx, cy, w, h, angle = map(float, obb.xywhr[i])
         confidence = float(obb.conf[i])
         clsId = int(obb.cls[i])
-
         label = results[0].names[clsId]
-
         x1, y1, x2, y2 = map(int, obb.xyxy[i])
 
+        # Draw bounding box
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), box_color, thickness=4)
 
-        color = (0, 0, 255)
+        # Prepare label text
+        text = f"{label} ({confidence:.2f})"
+        (tw, th), _ = cv2.getTextSize(text, font, font_scale, font_thickness)
 
-        cv2.rectangle(annotated, (x1, y1), (x2, y2), color, thickness = 7)
+        # Draw background rectangle for readability
+        cv2.rectangle(
+            annotated,
+            (x1, y1 - th - 8),
+            (x1 + tw + 4, y1),
+            box_color,
+            thickness=-1
+        )
 
-        # text = f"{label}: {confidence:.2f}"
-        # (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-        # cv2.rectangle(annotated, (x1, y1 - th - 8), (x1 + tw, y1), color, -1)
-        # cv2.putText(annotated, text, (x1, y1 - 5),
-        #             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+        # Draw text label
+        cv2.putText(
+            annotated,
+            text,
+            (x1 + 2, y1 - 5),
+            font,
+            font_scale,
+            text_color,
+            font_thickness,
+            cv2.LINE_AA
+        )
 
+        # Store box metadata
         boxes_info.append({
             "class_id": clsId,
             "class_name": label,
@@ -100,6 +123,7 @@ def process_yolo_results(results):
         })
 
     return boxes_info, annotated
+
 
 
 def standard_response(data, message, code, error=None):
@@ -285,10 +309,16 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
             str(e)
         )
 
+
 @app.post("/predict/marker_detection_classification/")
-async def predict_marker(scan_type: str = Form(None), app_type: str = Form(None),
-                                   type_of_load: str = Form(None), store_transfer_type: str = Form(None),
-                                   android_session_id: str = Form(None), file: UploadFile = File(...)):
+async def predict_marker(
+    scan_type: str = Form(None),
+    app_type: str = Form(None),
+    type_of_load: str = Form(None),
+    store_transfer_type: str = Form(None),
+    android_session_id: str = Form(None),
+    file: UploadFile = File(...)
+):
     try:
         # ------------------ VALIDATION ------------------
         storeFieldData = []
@@ -320,14 +350,14 @@ async def predict_marker(scan_type: str = Form(None), app_type: str = Form(None)
         # ------------------ CRATE DETECTION ------------------
         crate_model = get_crate_model()
         crate_results = crate_model.predict(source=image_np, conf=0.25, verbose=False)
-        boxes_info, annotated_image = process_yolo_results(crate_results)
+        boxes_info, annotated_image = process_yolo_results(crate_results)  # crates in RED
 
         # ------------------ COLOR CLASSIFICATION ------------------
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
         color_labels = ["BLUE", "RED", "YELLOW"]
         color_session, color_input, color_output = get_onnx_session("model/color_classifier.onnx")
 
-        # ------------------ MARKER MODELS ------------------¯¯¯¯
+        # ------------------ MARKER MODELS ------------------
         marker_model = get_marker_model()
         marker_cls_session, marker_cls_input, marker_cls_output = get_onnx_session(
             "model/marker_classification_efficientnet_21st_aug_2025_fp16.onnx"
@@ -360,6 +390,14 @@ async def predict_marker(scan_type: str = Form(None), app_type: str = Form(None)
 
         # ------------------ PROCESS EACH CRATE ------------------
         final_crates = []
+
+        # Font setup for annotation
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.6
+        font_thickness = 2
+        marker_color = (0, 0, 255)   # Red
+        text_color = (255, 255, 255) # White
+
         for crate_box in crate_results[0].obb.xyxy:
             x1, y1, x2, y2 = map(int, crate_box)
             crate_crop = pil_image.crop((x1, y1, x2, y2))
@@ -410,18 +448,35 @@ async def predict_marker(scan_type: str = Form(None), app_type: str = Form(None)
                     "encoded_value": encoded_value
                 })
 
+                # ---- Draw marker on main annotated image ----
+                global_mx1 = x1 + mx1
+                global_my1 = y1 + my1
+                global_mx2 = x1 + mx2
+                global_my2 = y1 + my2
+
+                cv2.rectangle(annotated_image, (global_mx1, global_my1), (global_mx2, global_my2), marker_color, 3)
+                cv2.putText(
+                    annotated_image,
+                    decoded_label,
+                    (global_mx1, max(global_my1 - 10, 0)),
+                    font,
+                    font_scale,
+                    text_color,
+                    font_thickness,
+                    cv2.LINE_AA
+                )
+
             classified_markers.sort(key=lambda x: x['cx'])
             final_crates.append({
                 "crate_bbox": [x1, y1, x2, y2],
                 "color": color_label,
-                "shape_code":''.join(str(m["encoded_value"]) for m in classified_markers),
+                "shape_code": ''.join(str(m["encoded_value"]) for m in classified_markers),
                 "markers": classified_markers
             })
-        final_crates.sort(key=lambda x: x['crate_bbox'][1])
 
+        final_crates.sort(key=lambda x: x['crate_bbox'][1])
         for crate in final_crates:
             crate.pop("crate_bbox", None)
-
 
         # ---------- Prepare for S3 Upload ----------
         timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
@@ -431,7 +486,6 @@ async def predict_marker(scan_type: str = Form(None), app_type: str = Form(None)
         json_name = f"crate_metadata_{unique_id}_{timestamp}.json"
         image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
         json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
-
 
         # Convert annotated image to bytes
         img = Image.fromarray(annotated_image)
@@ -455,6 +509,7 @@ async def predict_marker(scan_type: str = Form(None), app_type: str = Form(None)
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key)
         }
+
         # ---------- Upload to S3 ----------
         upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
         upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
