@@ -143,9 +143,10 @@ def process_yolo_results_crate_id(results):
         angle_deg = np.degrees(angle)
         rect = ((cx, cy), (w, h), angle_deg)
         box = cv2.boxPoints(rect)
+        box = box.astype(np.int32)
 
         # Draw oriented bounding box
-        cv2.polylines(annotated, [box], isClosed=True, color=box_color, thickness=2)
+        cv2.polylines(annotated, [box], isClosed=True, color=box_color, thickness=1)
 
         # Compute axis-aligned bounding box from rotated box
         x1, y1 = int(box[:,0].min()), int(box[:,1].min())
@@ -491,6 +492,8 @@ async def predict_marker(
             color_out = color_session.run([color_output], {color_input: input_data})
             color_idx = int(np.argmax(color_out[0]))
             color_label = color_labels[color_idx]
+            if color_label in ["YELLOW", "RED"]:
+                continue
             color_counts[color_label] += 1
 
             # ---- Step 2: Marker Detection ----
