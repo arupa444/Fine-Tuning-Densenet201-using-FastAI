@@ -71,7 +71,7 @@ def process_yolo_results(results):
     font = cv2.FONT_HERSHEY_SIMPLEX
     font_scale = 0.7
     font_thickness = 2
-    box_color = (0, 0, 255)      # 🔴 Red in BGR
+    box_color = (255, 0, 0)      # 🔴 Red in BGR
     text_color = (255, 255, 255) # White
 
     for i in range(len(obb.conf)):
@@ -108,6 +108,42 @@ def process_yolo_results(results):
             font_thickness,
             cv2.LINE_AA
         )
+
+        # Store box metadata
+        boxes_info.append({
+            "class_id": clsId,
+            "class_name": label,
+            "confidence": round(confidence, 4),
+            "cx": round(cx, 4),
+            "cy": round(cy, 4),
+            "w": round(w, 4),
+            "h": round(h, 4),
+            "angle": round(angle, 4),
+            "bbox": [x1, y1, x2, y2]
+        })
+
+    return boxes_info, annotated
+
+
+
+def process_yolo_results_crate_id(results):
+    boxes_info = []
+    obb = results[0].obb
+    annotated = results[0].orig_img.copy()
+
+    # Define font and visual settings
+    box_color = (255, 0, 0)      # 🔴 Red in RGB... cause the microservice need's that..(matplotlib)
+
+    for i in range(len(obb.conf)):
+        cx, cy, w, h, angle = map(float, obb.xywhr[i])
+        confidence = float(obb.conf[i])
+        clsId = int(obb.cls[i])
+        label = results[0].names[clsId]
+        x1, y1, x2, y2 = map(int, obb.xyxy[i])
+
+        # Draw bounding box
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), box_color, thickness=2)
+
 
         # Store box metadata
         boxes_info.append({
@@ -275,7 +311,6 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
             "predictions": boxes_info,
             "color_counts": color_counts
         }
-
         img_name = f"{uuid.uuid4()}.jpg"
         json_name = f"{uuid.uuid4()}.json"
         image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
@@ -283,6 +318,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
 
         upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
         upload_to_s3(json.dumps(data_json).encode(), json_key, "application/json")
+
 
 
 
@@ -350,7 +386,7 @@ async def predict_marker(
         # ------------------ CRATE DETECTION ------------------
         crate_model = get_crate_model()
         crate_results = crate_model.predict(source=image_np, conf=0.25, verbose=False)
-        boxes_info, annotated_image = process_yolo_results(crate_results)  # crates in RED
+        boxes_info, annotated_image = process_yolo_results_crate_id(crate_results)  # crates in RED
 
         # ------------------ COLOR CLASSIFICATION ------------------
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
@@ -390,13 +426,6 @@ async def predict_marker(
 
         # ------------------ PROCESS EACH CRATE ------------------
         final_crates = []
-
-        # Font setup for annotation
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.6
-        font_thickness = 2
-        marker_color = (0, 0, 255)   # Red
-        text_color = (255, 255, 255) # White
 
         for crate_box in crate_results[0].obb.xyxy:
             x1, y1, x2, y2 = map(int, crate_box)
@@ -448,37 +477,74 @@ async def predict_marker(
                     "encoded_value": encoded_value
                 })
 
-                # ---- Draw marker on main annotated image ----
-                global_mx1 = x1 + mx1
-                global_my1 = y1 + my1
-                global_mx2 = x1 + mx2
-                global_my2 = y1 + my2
-
-                cv2.rectangle(annotated_image, (global_mx1, global_my1), (global_mx2, global_my2), marker_color, 3)
-                cv2.putText(
-                    annotated_image,
-                    decoded_label,
-                    (global_mx1, max(global_my1 - 10, 0)),
-                    font,
-                    font_scale,
-                    text_color,
-                    font_thickness,
-                    cv2.LINE_AA
-                )
-
             classified_markers.sort(key=lambda x: x['cx'])
+            crate_id = ''.join(str(m["encoded_value"]) for m in classified_markers)
             final_crates.append({
                 "crate_bbox": [x1, y1, x2, y2],
                 "color": color_label,
-                "shape_code": ''.join(str(m["encoded_value"]) for m in classified_markers),
+                "crate_id": ''.join(str(m["encoded_value"]) for m in classified_markers),
                 "markers": classified_markers
             })
+            if crate_id:
+                # --- Configuration for text and spacing ---
+                font = cv2.FONT_HERSHEY_DUPLEX
+                font_scale = 1 # font size
+                font_thickness = 2 # font thickness
+                text_color = (0, 255, 150)  # florocent gray
+                char_spacing = 15  # <--- ADJUST SPACING HERE (in pixels)
+
+                # --- Calculate total width and max height for the spaced-out text ---
+                total_width = 0
+                max_height = 0
+                char_widths = []
+
+                for char in crate_id:
+                    (w, h), baseline = cv2.getTextSize(char, font, font_scale, font_thickness)
+                    total_width += w
+                    char_widths.append(w)
+                    if h > max_height:
+                        max_height = h
+
+                # Add the total spacing between characters
+                if len(crate_id) > 1:
+                    total_width += char_spacing * (len(crate_id) - 1)
+
+                # --- Calculate positioning ---
+                # Center of the crate's bounding box
+                center_x = x1 + (x2 - x1) // 2
+                center_y = y1 + (y2 - y1) // 2
+
+                # Starting X position to make the whole text block centered
+                start_x = center_x - (total_width // 2)
+
+                # Y position (consistent for all characters)
+                # This positions the text vertically in the center
+                text_y = center_y + (max_height // 2)
+
+
+
+                # --- Draw each character individually ---
+                current_x = start_x
+                for i, char in enumerate(crate_id):
+                    cv2.putText(
+                        annotated_image,
+                        char,
+                        (current_x, text_y),
+                        font,
+                        font_scale,
+                        text_color,
+                        font_thickness,
+                        cv2.LINE_AA
+                    )
+                    # Move to the next character's position
+                    current_x += char_widths[i] + char_spacing
+
 
         final_crates.sort(key=lambda x: x['crate_bbox'][1])
+
         for crate in final_crates:
             crate.pop("crate_bbox", None)
 
-        # ---------- Prepare for S3 Upload ----------
         timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
         unique_id = str(uuid.uuid4())
 
@@ -493,6 +559,7 @@ async def predict_marker(
         img.save(img_bytes, format="JPEG")
         img_bytes.seek(0)
         img_size_kb = len(img_bytes.getvalue()) / 1024
+
 
         data_json = {
             "bucket": BUCKET_NAME,
@@ -509,10 +576,10 @@ async def predict_marker(
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key)
         }
-
         # ---------- Upload to S3 ----------
         upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
         upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
+
 
         # ------------------ RETURN RESPONSE ------------------
         return JSONResponse(status_code=200, content={
