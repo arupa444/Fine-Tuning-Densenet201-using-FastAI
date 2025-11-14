@@ -304,6 +304,8 @@ def preprocess_image_for_onnx_marker(image: Image.Image, size) -> np.ndarray:
 
     return image_array.astype(np.float32)
 
+
+
 # -------------------- ENDPOINTS --------------------
 
 @app.post("/predict/crate_detection_classification/")
