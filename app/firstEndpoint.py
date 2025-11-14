@@ -177,8 +177,8 @@ def draw_scaled_centered_text(annotated_image, crate_id, bbox):
     font = cv2.FONT_HERSHEY_DUPLEX
 
     # Auto-scale text height relative to crate
-    font_scale = max(0.5, min(2.2, h / 85))
-    thickness = max(1, int(font_scale * 2.2))
+    font_scale = max(0.8, min(2.2, h / 85))
+    thickness = int(max(.5, int(font_scale * 2.2)))
 
     char_spacing = int(font_scale * 18)
     color = (0, 255, 150)  # neon green like your example
