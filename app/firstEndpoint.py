@@ -142,7 +142,7 @@ def process_yolo_results_crate_id(results):
         # Convert OBB to 4 corner points
         rect = ((cx, cy), (w, h), angle)
         box = cv2.boxPoints(rect)
-        box = box.astype(np.int32)   # <-- FIX
+        box = box.astype(np.int32)
 
         # Draw oriented bounding box
         cv2.polylines(annotated, [box], isClosed=True, color=box_color, thickness=2)
