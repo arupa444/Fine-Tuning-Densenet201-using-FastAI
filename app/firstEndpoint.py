@@ -275,26 +275,13 @@ def get_onnx_session(model_path):
     output_name = session.get_outputs()[0].name
     return session, input_name, output_name
 
-
 def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
-    # Pad to square before resize
-    w, h = image.size
-    max_dim = max(w, h)
-    padded = Image.new('RGB', (max_dim, max_dim), (0, 0, 0))
-    padded.paste(image, ((max_dim - w) // 2, (max_dim - h) // 2))
+    image = image.resize(size)
+    image = np.array(image).astype(np.float32) / 255.0
+    image = np.transpose(image, (2, 0, 1))
+    image = np.expand_dims(image, axis=0)
+    return image
 
-    resized = padded.resize(size)
-
-    image_array = np.array(resized, dtype=np.float32) / 255.0
-
-    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-    std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
-    image_array = (image_array - mean) / std
-
-    image_array = np.transpose(image_array, (2, 0, 1))
-    image_array = np.expand_dims(image_array, axis=0)
-
-    return image_array.astype(np.float32)
 # -------------------- ENDPOINTS --------------------
 
 @app.post("/predict/crate_detection_classification/")
@@ -339,7 +326,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         for box in crate_results[0].obb.xyxy:
             x1, y1, x2, y2 = map(int, box)
             crop = pil_image.crop((x1, y1, x2, y2))
-            input_data = preprocess_image_for_onnx(crop, (224, 224))
+            input_data = preprocess_image_for_onnx(crop, (244, 244))
             outputs = session.run([output_name], {input_name: input_data})
             class_idx = int(np.argmax(outputs[0]))
             color_counts[color_labels[class_idx]] += 1
@@ -485,7 +472,7 @@ async def predict_marker(
             crate_crop = pil_image.crop((x1, y1, x2, y2))
 
             # ---- Step 1: Color Classification ----
-            input_data = preprocess_image_for_onnx(crate_crop, (224, 224))
+            input_data = preprocess_image_for_onnx(crate_crop, (244, 244))
             color_out = color_session.run([color_output], {color_input: input_data})
             color_idx = int(np.argmax(color_out[0]))
             color_label = color_labels[color_idx]
