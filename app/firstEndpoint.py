@@ -131,21 +131,27 @@ def process_yolo_results_crate_id(results):
     obb = results[0].obb
     annotated = results[0].orig_img.copy()
 
-    # Define font and visual settings
-    box_color = (255, 0, 0)      # 🔴 Red in RGB... cause the microservice need's that..(matplotlib)
+    # Red color for bounding box (RGB)
+    box_color = (255, 0, 0)
 
     for i in range(len(obb.conf)):
         cx, cy, w, h, angle = map(float, obb.xywhr[i])
         confidence = float(obb.conf[i])
         clsId = int(obb.cls[i])
         label = results[0].names[clsId]
-        x1, y1, x2, y2 = map(int, obb.xyxy[i])
 
-        # Draw bounding box
-        cv2.rectangle(annotated, (x1, y1), (x2, y2), box_color, thickness=2)
+        # --- Convert OBB to corner points ---
+        rect = ((cx, cy), (w, h), angle)
+        box = cv2.boxPoints(rect)
+        box = np.int32(box)
 
+        # --- Draw oriented bounding box ---
+        cv2.polylines(annotated, [box], isClosed=True, color=box_color, thickness=2)
 
-        # Store box metadata
+        # Store metadata
+        x1, y1 = int(min(box[:,0])), int(min(box[:,1]))
+        x2, y2 = int(max(box[:,0])), int(max(box[:,1]))
+
         boxes_info.append({
             "class_id": clsId,
             "class_name": label,
@@ -155,7 +161,8 @@ def process_yolo_results_crate_id(results):
             "w": round(w, 4),
             "h": round(h, 4),
             "angle": round(angle, 4),
-            "bbox": [x1, y1, x2, y2]
+            "bbox": [x1, y1, x2, y2],
+            "obb_points": box.tolist()
         })
 
     return boxes_info, annotated
