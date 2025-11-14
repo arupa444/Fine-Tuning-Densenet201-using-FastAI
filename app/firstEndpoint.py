@@ -131,7 +131,6 @@ def process_yolo_results_crate_id(results):
     obb = results[0].obb
     annotated = results[0].orig_img.copy()
 
-    # Red color for bounding box (RGB)
     box_color = (255, 0, 0)
 
     for i in range(len(obb.conf)):
@@ -140,17 +139,17 @@ def process_yolo_results_crate_id(results):
         clsId = int(obb.cls[i])
         label = results[0].names[clsId]
 
-        # --- Convert OBB to corner points ---
+        # Convert OBB to 4 corner points
         rect = ((cx, cy), (w, h), angle)
         box = cv2.boxPoints(rect)
-        box = np.int32(box)
+        box = box.astype(np.int32)   # <-- FIX
 
-        # --- Draw oriented bounding box ---
+        # Draw oriented bounding box
         cv2.polylines(annotated, [box], isClosed=True, color=box_color, thickness=2)
 
-        # Store metadata
-        x1, y1 = int(min(box[:,0])), int(min(box[:,1]))
-        x2, y2 = int(max(box[:,0])), int(max(box[:,1]))
+        # Compute axis-aligned bounding box from rotated box
+        x1, y1 = int(box[:,0].min()), int(box[:,1].min())
+        x2, y2 = int(box[:,0].max()), int(box[:,1].max())
 
         boxes_info.append({
             "class_id": clsId,
@@ -166,7 +165,6 @@ def process_yolo_results_crate_id(results):
         })
 
     return boxes_info, annotated
-
 
 
 
