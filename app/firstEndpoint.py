@@ -128,7 +128,7 @@ def process_yolo_results(results):
 
 def process_yolo_results_crate_id(results):
     boxes_info = []
-    obb = results[0].boxes
+    obb = results[0].obb
     annotated = results[0].orig_img.copy()
 
     H, W = annotated.shape[:2]
