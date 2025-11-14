@@ -67,47 +67,26 @@ def process_yolo_results(results):
     obb = results[0].obb
     annotated = results[0].orig_img.copy()
 
-    # Define font and visual settings
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.7
-    font_thickness = 2
-    box_color = (255, 0, 0)      # 🔴 Red in BGR
-    text_color = (255, 255, 255) # White
+    box_color = (255, 0, 0)
 
     for i in range(len(obb.conf)):
         cx, cy, w, h, angle = map(float, obb.xywhr[i])
         confidence = float(obb.conf[i])
         clsId = int(obb.cls[i])
         label = results[0].names[clsId]
-        x1, y1, x2, y2 = map(int, obb.xyxy[i])
 
-        # Draw bounding box
-        cv2.rectangle(annotated, (x1, y1), (x2, y2), box_color, thickness=4)
+        # Convert OBB to 4 corner points
+        angle_deg = np.degrees(angle)
+        rect = ((cx, cy), (w, h), angle_deg)
+        box = cv2.boxPoints(rect)
+        box = box.astype(np.int32)
 
-        # Prepare label text
-        text = f"{label} ({confidence:.2f})"
-        (tw, th), _ = cv2.getTextSize(text, font, font_scale, font_thickness)
+        # Draw oriented bounding box
+        cv2.polylines(annotated, [box], isClosed=True, color=box_color, thickness=2)
 
-        # Draw background rectangle for readability
-        cv2.rectangle(
-            annotated,
-            (x1, y1 - th - 8),
-            (x1 + tw + 4, y1),
-            box_color,
-            thickness=-1
-        )
-
-        # Draw text label
-        cv2.putText(
-            annotated,
-            text,
-            (x1 + 2, y1 - 5),
-            font,
-            font_scale,
-            text_color,
-            font_thickness,
-            cv2.LINE_AA
-        )
+        # Compute axis-aligned bounding box from rotated box
+        x1, y1 = int(box[:,0].min()), int(box[:,1].min())
+        x2, y2 = int(box[:,0].max()), int(box[:,1].max())
 
         # Store box metadata
         boxes_info.append({
@@ -146,7 +125,7 @@ def process_yolo_results_crate_id(results):
         box = box.astype(np.int32)
 
         # Draw oriented bounding box
-        cv2.polylines(annotated, [box], isClosed=True, color=box_color, thickness=1)
+        cv2.polylines(annotated, [box], isClosed=True, color=box_color, thickness=2)
 
         # Compute axis-aligned bounding box from rotated box
         x1, y1 = int(box[:,0].min()), int(box[:,1].min())
@@ -337,7 +316,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
 
         crate_model = get_crate_model()
         crate_results = crate_model.predict(source=image_np, conf=0.3, verbose=False)
-        boxes_info, annotated_image = process_yolo_results(crate_results)
+        boxes_info, annotated_image = process_yolo_results_crate_id(crate_results)
 
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
         color_labels = ["BLUE", "RED", "YELLOW"]
@@ -371,6 +350,11 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         json_name = f"{uuid.uuid4()}.json"
         image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
         json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
+
+        # cv2.imshow("Annotated Image", annotated_image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
 
         upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
         upload_to_s3(json.dumps(data_json).encode(), json_key, "application/json")
@@ -582,13 +566,14 @@ async def predict_marker(
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key)
         }
-        cv2.imshow("Annotated Image", annotated_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+
+        # cv2.imshow("Annotated Image", annotated_image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
         # ---------- Upload to S3 ----------
-        # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
-        # upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
+        upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
+        upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
 
 
         # ------------------ RETURN RESPONSE ------------------
