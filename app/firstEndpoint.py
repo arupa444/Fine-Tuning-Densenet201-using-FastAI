@@ -132,8 +132,8 @@ def process_yolo_results_crate_id(results):
     annotated = results[0].orig_img.copy()
 
     H, W = annotated.shape[:2]
-    thickness = max(2, int(min(W, H) * 0.0020))
-    box_color = (0, 0, 255)  # pure red BGR (matches your reference)
+    thickness = max(2, int(min(W, H) * 0.002))
+    box_color = (0, 0, 255)  # red
 
     for i in range(len(obb.conf)):
         cx, cy, w, h, angle = map(float, obb.xywhr[i])
@@ -141,34 +141,41 @@ def process_yolo_results_crate_id(results):
         clsId = int(obb.cls[i])
         label = results[0].names[clsId]
 
-        # Rotated OBB box
+        # ---> REAL OBB CORNERS (this fixes the rotate problem)
         rect = ((cx, cy), (w, h), angle)
         corners = cv2.boxPoints(rect).astype(int)
 
-        # Draw clean, crisp rotating box
+        # Draw true oriented bounding box
         cv2.polylines(
             annotated,
             [corners],
-            isClosed=True,
-            color=box_color,
-            thickness=thickness,
-            lineType=cv2.LINE_AA
+            True,
+            box_color,
+            thickness,
+            cv2.LINE_AA
         )
 
+        # Create a real axis-aligned bounding box from the corners
         xs = corners[:, 0]
         ys = corners[:, 1]
-        x1, y1, x2, y2 = min(xs), min(ys), max(xs), max(ys)
+        x1, y1 = int(min(xs)), int(min(ys))
+        x2, y2 = int(max(xs)), int(max(ys))
 
         boxes_info.append({
             "class_id": clsId,
             "class_name": label,
             "confidence": round(confidence, 4),
-            "cx": cx, "cy": cy, "w": w, "h": h, "angle": angle,
-            "bbox": [int(x1), int(y1), int(x2), int(y2)],
+            "cx": cx,
+            "cy": cy,
+            "w": w,
+            "h": h,
+            "angle": angle,
+            "bbox": [x1, y1, x2, y2],  # proper bounding box
             "corners": corners.tolist()
         })
 
     return boxes_info, annotated
+
 
 
 def draw_scaled_centered_text(annotated_image, crate_id, bbox):
