@@ -285,24 +285,25 @@ def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
 
 
 def preprocess_image_for_onnx_marker(image: Image.Image, size) -> np.ndarray:
-    # Pad to square before resize
+    from PIL import ImageEnhance
+
+    # Enhance contrast to make white markers more prominent
+    enhancer = ImageEnhance.Contrast(image)
+    image = enhancer.enhance(1.5)
+
+    # Pad to square
     w, h = image.size
     max_dim = max(w, h)
-    padded = Image.new('RGB', (max_dim, max_dim), (0, 0, 0))
+    padded = Image.new('RGB', (max_dim, max_dim), (114, 114, 114))
     padded.paste(image, ((max_dim - w) // 2, (max_dim - h) // 2))
 
-    resized = padded.resize(size)
+    resized = padded.resize(size, Image.Resampling.LANCZOS)
 
     image_array = np.array(resized, dtype=np.float32) / 255.0
-
-    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-    std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
-    image_array = (image_array - mean) / std
-
     image_array = np.transpose(image_array, (2, 0, 1))
     image_array = np.expand_dims(image_array, axis=0)
 
-    return image_array.astype(np.float32)
+    return image_array
 
 # -------------------- ENDPOINTS --------------------
 
@@ -589,13 +590,13 @@ async def predict_marker(
             "json_url": get_s3_url(json_key)
         }
 
-        # cv2.imshow("Annotated Image", annotated_image)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+        cv2.imshow("Annotated Image", annotated_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
         # ---------- Upload to S3 ----------
-        upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
-        upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
+        # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
+        # upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
 
 
         # ------------------ RETURN RESPONSE ------------------
