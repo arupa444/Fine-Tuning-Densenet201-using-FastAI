@@ -425,7 +425,7 @@ async def predict_marker(
 
         # ------------------ CRATE DETECTION ------------------
         crate_model = get_crate_model()
-        crate_results = crate_model.predict(source=image_np, conf=0.25, verbose=False)
+        crate_results = crate_model.predict(source=image_np, conf=0.50, verbose=False)
         boxes_info, annotated_image = process_yolo_results_crate_id(crate_results)  # crates in RED
 
         # ------------------ COLOR CLASSIFICATION ------------------
