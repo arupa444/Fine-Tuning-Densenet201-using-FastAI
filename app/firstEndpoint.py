@@ -291,22 +291,17 @@ def preprocess_image_for_onnx_marker(image: Image.Image, size) -> np.ndarray:
     padded = Image.new('RGB', (max_dim, max_dim), (0, 0, 0))
     padded.paste(image, ((max_dim - w) // 2, (max_dim - h) // 2))
 
-    # ✅ Resize the PADDED image
     resized = padded.resize(size)
 
-    # ✅ Convert to float32 array
     image_array = np.array(resized, dtype=np.float32) / 255.0
 
-    # ✅ ImageNet normalization with explicit float32
     mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
     std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
     image_array = (image_array - mean) / std
 
-    # ✅ Transpose and add batch dimension
     image_array = np.transpose(image_array, (2, 0, 1))
     image_array = np.expand_dims(image_array, axis=0)
 
-    # ✅ Final safety: ensure float32
     return image_array.astype(np.float32)
 
 # -------------------- ENDPOINTS --------------------
