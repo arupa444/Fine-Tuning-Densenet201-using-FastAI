@@ -283,19 +283,18 @@ def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
     padded = Image.new('RGB', (max_dim, max_dim), (0, 0, 0))
     padded.paste(image, ((max_dim - w) // 2, (max_dim - h) // 2))
 
-    # ... rest of preprocessing
-    image = image.resize(size)
-    image = np.array(image).astype(np.float32) / 255.0
+    resized = padded.resize(size)
 
-    # ImageNet normalization (check if your model needs this!)
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-    image = (image - mean) / std
+    image_array = np.array(resized, dtype=np.float32) / 255.0
 
-    image = np.transpose(image, (2, 0, 1))
-    image = np.expand_dims(image, axis=0)
-    return image
+    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+    image_array = (image_array - mean) / std
 
+    image_array = np.transpose(image_array, (2, 0, 1))
+    image_array = np.expand_dims(image_array, axis=0)
+
+    return image_array.astype(np.float32)
 # -------------------- ENDPOINTS --------------------
 
 @app.post("/predict/crate_detection_classification/")
@@ -504,7 +503,7 @@ async def predict_marker(
             for i, m_box in enumerate(marker_results[0].obb.xyxy):
                 mx1, my1, mx2, my2 = map(int, m_box)
                 marker_crop = crate_crop.crop((mx1, my1, mx2, my2))
-                marker_input = preprocess_image_for_onnx(marker_crop, (224, 224))
+                marker_input = preprocess_image_for_onnx(marker_crop, (64, 64))
                 cls_output = marker_cls_session.run([marker_cls_output], {marker_cls_input: marker_input})
                 cls_idx = int(np.argmax(cls_output[0]))
 
@@ -581,13 +580,13 @@ async def predict_marker(
             "json_url": get_s3_url(json_key)
         }
 
-        # cv2.imshow("Annotated Image", annotated_image)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+        cv2.imshow("Annotated Image", annotated_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
         # ---------- Upload to S3 ----------
-        upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
-        upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
+        # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
+        # upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
 
 
         # ------------------ RETURN RESPONSE ------------------
