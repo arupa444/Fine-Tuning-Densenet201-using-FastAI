@@ -132,7 +132,7 @@ def process_yolo_results_crate_id(results):
     annotated = results[0].orig_img.copy()
 
     # Define font and visual settings
-    box_color = (255, 0, 0)      # 🔴 Red in RGB... cause the microservice need's that..(matplotlib)
+    box_color = (255, 0, 0)      # 🔴 Red in RGB... cause the microservice need's that...(matplotlib)
 
     for i in range(len(obb.conf)):
         cx, cy, w, h, angle = map(float, obb.xywhr[i])
