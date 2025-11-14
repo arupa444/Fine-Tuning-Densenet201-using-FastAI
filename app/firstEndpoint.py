@@ -131,35 +131,93 @@ def process_yolo_results_crate_id(results):
     obb = results[0].obb
     annotated = results[0].orig_img.copy()
 
-    # Define font and visual settings
-    box_color = (255, 0, 0)      # 🔴 Red in RGB... cause the microservice need's that...(matplotlib)
+    H, W = annotated.shape[:2]
+    thickness = max(2, int(min(W, H) * 0.0020))
+    box_color = (0, 0, 255)  # pure red BGR (matches your reference)
 
     for i in range(len(obb.conf)):
         cx, cy, w, h, angle = map(float, obb.xywhr[i])
         confidence = float(obb.conf[i])
         clsId = int(obb.cls[i])
         label = results[0].names[clsId]
-        x1, y1, x2, y2 = map(int, obb.xyxy[i])
 
-        # Draw bounding box
-        cv2.rectangle(annotated, (x1, y1), (x2, y2), box_color, thickness=2)
+        # Rotated OBB box
+        rect = ((cx, cy), (w, h), angle)
+        corners = cv2.boxPoints(rect).astype(int)
 
+        # Draw clean, crisp rotating box
+        cv2.polylines(
+            annotated,
+            [corners],
+            isClosed=True,
+            color=box_color,
+            thickness=thickness,
+            lineType=cv2.LINE_AA
+        )
 
-        # Store box metadata
+        xs = corners[:, 0]
+        ys = corners[:, 1]
+        x1, y1, x2, y2 = min(xs), min(ys), max(xs), max(ys)
+
         boxes_info.append({
             "class_id": clsId,
             "class_name": label,
             "confidence": round(confidence, 4),
-            "cx": round(cx, 4),
-            "cy": round(cy, 4),
-            "w": round(w, 4),
-            "h": round(h, 4),
-            "angle": round(angle, 4),
-            "bbox": [x1, y1, x2, y2]
+            "cx": cx, "cy": cy, "w": w, "h": h, "angle": angle,
+            "bbox": [int(x1), int(y1), int(x2), int(y2)],
+            "corners": corners.tolist()
         })
 
     return boxes_info, annotated
 
+
+def draw_scaled_centered_text(annotated_image, crate_id, bbox):
+    x1, y1, x2, y2 = bbox
+    w = x2 - x1
+    h = y2 - y1
+
+    font = cv2.FONT_HERSHEY_DUPLEX
+
+    # Auto-scale text height relative to crate
+    font_scale = max(0.5, min(2.2, h / 85))
+    thickness = max(1, int(font_scale * 2.2))
+
+    char_spacing = int(font_scale * 18)
+    color = (0, 255, 150)  # neon green like your example
+
+    # Compute total length
+    char_widths = []
+    total_width = 0
+    max_h = 0
+
+    for ch in crate_id:
+        (cw, chh), _ = cv2.getTextSize(ch, font, font_scale, thickness)
+        char_widths.append(cw)
+        total_width += cw
+        max_h = max(max_h, chh)
+
+    if len(crate_id) > 1:
+        total_width += char_spacing * (len(crate_id) - 1)
+
+    # Position: horizontally centered, vertically centered
+    start_x = x1 + (w - total_width) // 2
+    text_y = y1 + (h // 2) + (max_h // 2)
+
+    current_x = start_x
+
+    # Draw each character
+    for i, ch in enumerate(crate_id):
+        cv2.putText(
+            annotated_image,
+            ch,
+            (int(current_x), int(text_y)),
+            font,
+            font_scale,
+            color,
+            thickness,
+            cv2.LINE_AA
+        )
+        current_x += char_widths[i] + char_spacing
 
 
 def standard_response(data, message, code, error=None):
@@ -486,59 +544,7 @@ async def predict_marker(
                 "markers": classified_markers
             })
             if crate_id:
-                # --- Configuration for text and spacing ---
-                font = cv2.FONT_HERSHEY_DUPLEX
-                font_scale = 1 # font size
-                font_thickness = 2 # font thickness
-                text_color = (0, 255, 150)  # florocent gray
-                char_spacing = 15  # <--- ADJUST SPACING HERE (in pixels)
-
-                # --- Calculate total width and max height for the spaced-out text ---
-                total_width = 0
-                max_height = 0
-                char_widths = []
-
-                for char in crate_id:
-                    (w, h), baseline = cv2.getTextSize(char, font, font_scale, font_thickness)
-                    total_width += w
-                    char_widths.append(w)
-                    if h > max_height:
-                        max_height = h
-
-                # Add the total spacing between characters
-                if len(crate_id) > 1:
-                    total_width += char_spacing * (len(crate_id) - 1)
-
-                # --- Calculate positioning ---
-                # Center of the crate's bounding box
-                center_x = x1 + (x2 - x1) // 2
-                center_y = y1 + (y2 - y1) // 2
-
-                # Starting X position to make the whole text block centered
-                start_x = center_x - (total_width // 2)
-
-                # Y position (consistent for all characters)
-                # This positions the text vertically in the center
-                text_y = center_y + (max_height // 2)
-
-
-
-                # --- Draw each character individually ---
-                current_x = start_x
-                for i, char in enumerate(crate_id):
-                    cv2.putText(
-                        annotated_image,
-                        char,
-                        (current_x, text_y),
-                        font,
-                        font_scale,
-                        text_color,
-                        font_thickness,
-                        cv2.LINE_AA
-                    )
-                    # Move to the next character's position
-                    current_x += char_widths[i] + char_spacing
-
+                draw_scaled_centered_text(annotated_image, crate_id, (x1, y1, x2, y2))
 
         final_crates.sort(key=lambda x: x['crate_bbox'][1])
 
