@@ -131,50 +131,35 @@ def process_yolo_results_crate_id(results):
     obb = results[0].obb
     annotated = results[0].orig_img.copy()
 
-    H, W = annotated.shape[:2]
-    thickness = max(2, int(min(W, H) * 0.002))
-    box_color = (0, 0, 255)  # red
+    # Define font and visual settings
+    box_color = (255, 0, 0)      # 🔴 Red in RGB... cause the microservice need's that..(matplotlib)
 
     for i in range(len(obb.conf)):
         cx, cy, w, h, angle = map(float, obb.xywhr[i])
         confidence = float(obb.conf[i])
         clsId = int(obb.cls[i])
         label = results[0].names[clsId]
+        x1, y1, x2, y2 = map(int, obb.xyxy[i])
 
-        # ---> REAL OBB CORNERS (this fixes the rotate problem)
-        rect = ((cx, cy), (w, h), angle)
-        corners = cv2.boxPoints(rect).astype(int)
+        # Draw bounding box
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), box_color, thickness=2)
 
-        # Draw true oriented bounding box
-        cv2.polylines(
-            annotated,
-            [corners],
-            True,
-            box_color,
-            thickness,
-            cv2.LINE_AA
-        )
 
-        # Create a real axis-aligned bounding box from the corners
-        xs = corners[:, 0]
-        ys = corners[:, 1]
-        x1, y1 = int(min(xs)), int(min(ys))
-        x2, y2 = int(max(xs)), int(max(ys))
-
+        # Store box metadata
         boxes_info.append({
             "class_id": clsId,
             "class_name": label,
             "confidence": round(confidence, 4),
-            "cx": cx,
-            "cy": cy,
-            "w": w,
-            "h": h,
-            "angle": angle,
-            "bbox": [x1, y1, x2, y2],  # proper bounding box
-            "corners": corners.tolist()
+            "cx": round(cx, 4),
+            "cy": round(cy, 4),
+            "w": round(w, 4),
+            "h": round(h, 4),
+            "angle": round(angle, 4),
+            "bbox": [x1, y1, x2, y2]
         })
 
     return boxes_info, annotated
+
 
 
 
