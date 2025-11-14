@@ -128,7 +128,7 @@ def process_yolo_results(results):
 
 def process_yolo_results_crate_id(results):
     boxes_info = []
-    obb = results[0].obb
+    obb = results[0].boxes
     annotated = results[0].orig_img.copy()
 
     H, W = annotated.shape[:2]
@@ -589,9 +589,13 @@ async def predict_marker(
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key)
         }
+        cv2.imshow("Annotated Image", annotated_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
         # ---------- Upload to S3 ----------
-        upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
-        upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
+        # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
+        # upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
 
 
         # ------------------ RETURN RESPONSE ------------------
