@@ -550,9 +550,18 @@ async def predict_marker(
             c_cx, c_cy, c_w, c_h, c_angle = map(float, crate_results[0].obb.xywhr[i])
 
             final_crates.append({
-                "crate_bbox": [x1, y1, x2, y2],
+                "crate_bbox": {
+                    "class_index": c_cls_idx,
+                    "confidence": round(c_confidence, 4),
+                    "cx": round(c_cx, 4),
+                    "cy": round(c_cy, 4),
+                    "w": round(c_w, 4),
+                    "h": round(c_h, 4),
+                    "angle": round(c_angle, 4),
+                    "bbox": [x1, y1, x2, y2]  # Using "bbox" to avoid confusion with the parent key
+                },
                 "color": color_label,
-                "crate_id": ''.join(str(m["encoded_value"]) for m in classified_markers),
+                "crate_id": crate_id,
                 "markers": classified_markers
             })
             if crate_id:
