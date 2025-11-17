@@ -450,7 +450,7 @@ async def predict_marker(
         # ------------------ CRATE DETECTION ------------------
         crate_model = get_crate_model()
         crate_results = crate_model.predict(source=image_np, conf=0.50, verbose=False)
-        boxes_info, annotated_image = process_yolo_results_crate_id(crate_results)  # crates in RED
+        _, annotated_image = process_yolo_results_crate_id(crate_results)  # crates in RED
 
         # ------------------ COLOR CLASSIFICATION ------------------
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
@@ -555,9 +555,6 @@ async def predict_marker(
                 draw_scaled_centered_text(annotated_image, crate_id, (x1, y1, x2, y2))
 
         final_crates.sort(key=lambda x: x['crate_bbox'][1])
-
-        for crate in final_crates:
-            crate.pop("crate_bbox", None)
 
         timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
         unique_id = str(uuid.uuid4())
