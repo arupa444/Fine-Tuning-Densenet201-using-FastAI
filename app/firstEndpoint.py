@@ -545,6 +545,10 @@ async def predict_marker(
 
             classified_markers.sort(key=lambda x: x['cx'])
             crate_id = ''.join(str(m["encoded_value"]) for m in classified_markers)
+            c_confidence = float(crate_results[0].obb.conf[i])
+            c_cls_idx = int(crate_results[0].obb.cls[i])
+            c_cx, c_cy, c_w, c_h, c_angle = map(float, crate_results[0].obb.xywhr[i])
+
             final_crates.append({
                 "crate_bbox": [x1, y1, x2, y2],
                 "color": color_label,
