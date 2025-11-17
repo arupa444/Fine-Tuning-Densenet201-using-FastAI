@@ -567,7 +567,7 @@ async def predict_marker(
             if crate_id:
                 draw_scaled_centered_text(annotated_image, crate_id, (x1, y1, x2, y2))
 
-        final_crates.sort(key=lambda x: x['crate_bbox'][1])
+        final_crates.sort(key=lambda x: x['crate_bbox']['bbox'][1])
 
         timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
         unique_id = str(uuid.uuid4())
