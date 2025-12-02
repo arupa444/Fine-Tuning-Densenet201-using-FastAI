@@ -141,7 +141,7 @@ def process_yolo_results_crate_id(results):
             "w": round(w, 4),
             "h": round(h, 4),
             "angle": round(angle, 4),
-            "bbox": [x1, y1, x2, y2],
+            # "bbox": [x1, y1, x2, y2],
             "obb_points": box.tolist()
         })
 
