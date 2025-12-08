@@ -177,76 +177,6 @@ def process_yolo_results_crate_id(results):
 
 
 
-def process_tflite_obb_results(output_data, image_np, conf_threshold=0.3, iou_threshold=0.5):
-    """
-    Decodes raw YOLOv11/v8 OBB TFLite output: [1, 6, 8400] -> [x, y, w, h, angle, score]
-    """
-    # 1. Transpose output: [1, Channels, Anchors] -> [1, Anchors, Channels]
-    output_data = np.transpose(output_data, (0, 2, 1))
-    predictions = output_data[0]
-
-    boxes_rotated = []
-    scores = []
-    class_ids = []
-
-    for row in predictions:
-        # Extract class scores (slice from index 5 onwards)
-        classes_scores = row[5:]
-        class_id = np.argmax(classes_scores)
-        score = classes_scores[class_id]
-
-        if score > conf_threshold:
-            # Extract and cast to standard float immediately to avoid issues later
-            cx, cy, w, h, angle = map(float, row[0:5])
-
-            # Convert angle from radians to degrees for OpenCV
-            angle_deg = np.degrees(angle)
-
-            # Store for NMS: ((cx, cy), (w, h), angle_deg)
-            # Note: OpenCV expects floats in the rect tuple, which we now have
-            boxes_rotated.append(((cx, cy), (w, h), float(angle_deg)))
-            scores.append(float(score))
-            class_ids.append(int(class_id))
-
-    # 3. Apply NMS (Non-Maximum Suppression)
-    indices = cv2.dnn.NMSBoxesRotated(boxes_rotated, scores, conf_threshold, iou_threshold)
-
-    boxes_info = []
-    annotated_image = image_np.copy()
-    box_color = (255, 0, 0)
-
-    if len(indices) > 0:
-        indices = indices.flatten()
-        for i in indices:
-            # Get box details
-            rect = boxes_rotated[i]  # ((cx, cy), (w, h), angle)
-            score = scores[i]
-            cls_id = class_ids[i]
-
-            # Draw OBB
-            box_points = cv2.boxPoints(rect).astype(np.int32)
-            cv2.polylines(annotated_image, [box_points], isClosed=True, color=box_color, thickness=2)
-
-            # Calculate Axis-Aligned Bounding Box (AABB) for cropping later
-            x1, y1 = np.min(box_points, axis=0)
-            x2, y2 = np.max(box_points, axis=0)
-
-            # --- KEY FIX: Explicit Type Casting ---
-            boxes_info.append({
-                "class_id": int(cls_id),
-                "class_name": "crate",
-                "confidence": float(round(score, 4)),
-                # rect[0] is (cx, cy), rect[1] is (w, h), rect[2] is angle
-                "cx": float(round(rect[0][0], 4)),
-                "cy": float(round(rect[0][1], 4)),
-                "w": float(round(rect[1][0], 4)),
-                "h": float(round(rect[1][1], 4)),
-                "angle": float(round(rect[2], 4)),
-                "bbox": [int(x1), int(y1), int(x2), int(y2)] # Ensure ints
-            })
-
-    return boxes_info, annotated_image
-
 def draw_scaled_centered_text(annotated_image, crate_id, bbox):
     x1, y1, x2, y2 = bbox
     w = x2 - x1
@@ -357,19 +287,21 @@ def get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_t
             str(e)
         )
 
-# -------------------- TFLITE MODEL LOADING --------------------
+
 @lru_cache(maxsize=1)
 def get_crate_model():
-    # Loads the raw TFLite interpreter
     interpreter = tf.lite.Interpreter(model_path="model/jfl_crate_model_obb_01052025_with_nms_conf_0.5_yolo_v11.tflite")
     interpreter.allocate_tensors()
     return interpreter
+
 
 @lru_cache(maxsize=1)
 def get_marker_model():
     interpreter = tf.lite.Interpreter(model_path="model/jfl_marker_vertical_rotate_28_july_2025_float32_nms_false_yolo_v11.tflite")
     interpreter.allocate_tensors()
     return interpreter
+
+
 # -------------------- ONNX MODEL --------------------
 @lru_cache(maxsize=1)
 def get_onnx_session(model_path):
@@ -415,25 +347,24 @@ def preprocess_image_for_onnx_marker(image: Image.Image, size) -> np.ndarray:
 
 # -------------------- ENDPOINTS --------------------
 
-
 @app.post("/predict/crate_detection_classification/")
-async def predict_crate_with_color(
-        scan_type: str = Form(None),
-        app_type: str = Form(None),
-        type_of_load: str = Form(None),
-        store_transfer_type: str = Form(None),
-        android_session_id: str = Form(None),
-        file: UploadFile = File(...)
-):
+async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = Form(None),
+                                   type_of_load: str = Form(None), store_transfer_type: str = Form(None),
+                                   android_session_id: str = Form(None), file: UploadFile = File(...)):
     try:
-        # --- VALIDATION (Keep as is) ---
+        # ------------------ VALIDATION ------------------
         storeFieldData = []
         factorsToValidate = ['', None, "nil", 'none']
-        if scan_type in factorsToValidate: storeFieldData.append("scan_type")
-        if app_type in factorsToValidate: storeFieldData.append("app_type")
-        if type_of_load in factorsToValidate: storeFieldData.append("type_of_load")
-        if store_transfer_type in factorsToValidate: storeFieldData.append("store_transfer_type")
-        if android_session_id in factorsToValidate: storeFieldData.append("android_session_id")
+        if scan_type in factorsToValidate:
+            storeFieldData.append("scan_type")
+        if app_type in factorsToValidate:
+            storeFieldData.append("app_type")
+        if type_of_load in factorsToValidate:
+            storeFieldData.append("type_of_load")
+        if store_transfer_type in factorsToValidate:
+            storeFieldData.append("store_transfer_type")
+        if android_session_id in factorsToValidate:
+            storeFieldData.append("android_session_id")
 
         if len(storeFieldData) == 1:
             raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
@@ -442,59 +373,29 @@ async def predict_crate_with_color(
 
         if file.content_type not in SUPPORTED_IMAGE_TYPES:
             raise HTTPException(status_code=415, detail="Unsupported image type.")
-
-        # --- 1. IMAGE LOADING ---
         image_bytes = await file.read()
-        image_np = read_image_for_yolo(image_bytes)  # Returns (640, 640, 3) uint8
+        image_np = read_image_for_yolo(image_bytes)
         pil_image = Image.fromarray(image_np)
 
-        # --- 2. TFLITE INFERENCE (REPLACES crate_model.predict) ---
-        interpreter = get_crate_model()  # This now returns tf.lite.Interpreter
-        input_details = interpreter.get_input_details()
-        output_details = interpreter.get_output_details()
+        crate_model = get_crate_model()
+        crate_results = crate_model.predict(source=image_np, conf=0.3, verbose=False)
+        boxes_info, annotated_image = process_yolo_results_crate_id(crate_results)
 
-        # Preprocess: Normalize (0-1) and Add Batch Dimension -> (1, 640, 640, 3)
-        input_data = (image_np.astype(np.float32) / 255.0)
-        input_data = np.expand_dims(input_data, axis=0)
-
-        # Run Inference
-        interpreter.set_tensor(input_details[0]['index'], input_data)
-        interpreter.invoke()
-        output_data = interpreter.get_tensor(output_details[0]['index'])
-
-        # --- 3. DECODE RESULTS ---
-        # Helper function processes raw tensors -> formatted boxes
-        boxes_info, annotated_image = process_tflite_obb_results(output_data, image_np, conf_threshold=0.3)
-
-        # --- 4. COLOR CLASSIFICATION ---
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
         color_labels = ["BLUE", "RED", "YELLOW"]
+
         session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
 
-        # Iterate over decoded boxes
-        for box_meta in boxes_info:
-            # Use the calculated AABB [x1, y1, x2, y2] for cropping
-            x1, y1, x2, y2 = box_meta["bbox"]
-
-            # Ensure coordinates are within image bounds
-            x1, y1 = max(0, x1), max(0, y1)
-            x2, y2 = min(640, x2), min(640, y2)
-
-            if x2 > x1 and y2 > y1:
-                crop = pil_image.crop((x1, y1, x2, y2))
-                input_data_onnx = preprocess_image_for_onnx(crop, (244, 244))
-                outputs = session.run([output_name], {input_name: input_data_onnx})
-                class_idx = int(np.argmax(outputs[0]))
-
-                # Update box metadata and counts
-                box_meta["class_id"] = class_idx  # Update to color class
-                box_meta["class_name"] = color_labels[class_idx]
-                color_counts[color_labels[class_idx]] += 1
-
-        # Sort top-to-bottom
+        for ind, box in enumerate(crate_results[0].obb.xyxy):
+            x1, y1, x2, y2 = map(int, box)
+            crop = pil_image.crop((x1, y1, x2, y2))
+            input_data = preprocess_image_for_onnx(crop, (244, 244))
+            outputs = session.run([output_name], {input_name: input_data})
+            class_idx = int(np.argmax(outputs[0]))
+            boxes_info[ind]["class_id"] = class_idx
+            color_counts[color_labels[class_idx]] += 1
         boxes_info.sort(key=lambda x: x['cy'])
-
-        # --- 5. UPLOAD & RESPONSE (Keep as is) ---
+        # Prepare annotated image and JSON for S3 upload
         img = Image.fromarray(annotated_image)
         img_bytes = io.BytesIO()
         img.save(img_bytes, format="JPEG")
@@ -518,22 +419,26 @@ async def predict_crate_with_color(
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
+
         # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
         # upload_to_s3(json.dumps(data_json).encode(), json_key, "application/json")
 
+
+
+
         return JSONResponse(status_code=200, content={
             "status": "success",
-            "data": {
-                "predictions": boxes_info,
+            "data":{
+                "predictions" : boxes_info,
                 "image_key": image_key,
                 "image_url": get_s3_url(image_key),
                 "blue_count": color_counts["BLUE"],
                 "yellow_count": color_counts["YELLOW"],
                 "red_count": color_counts["RED"]
             },
-            "message": "Crate detection done with color classification",
-            "code": 200,
-            "error": None
+            "message" : "Crate detection done with color classification",
+            "code" : 200,
+            "error" : None
         })
     except Exception as e:
         logging.error(f"Crate classification failed: {e}", exc_info=True)
@@ -543,111 +448,6 @@ async def predict_crate_with_color(
             400,
             str(e)
         )
-
-
-
-
-# @app.post("/predict/crate_detection_classification/")
-# async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = Form(None),
-#                                    type_of_load: str = Form(None), store_transfer_type: str = Form(None),
-#                                    android_session_id: str = Form(None), file: UploadFile = File(...)):
-#     try:
-#         # ------------------ VALIDATION ------------------
-#         storeFieldData = []
-#         factorsToValidate = ['', None, "nil", 'none']
-#         if scan_type in factorsToValidate:
-#             storeFieldData.append("scan_type")
-#         if app_type in factorsToValidate:
-#             storeFieldData.append("app_type")
-#         if type_of_load in factorsToValidate:
-#             storeFieldData.append("type_of_load")
-#         if store_transfer_type in factorsToValidate:
-#             storeFieldData.append("store_transfer_type")
-#         if android_session_id in factorsToValidate:
-#             storeFieldData.append("android_session_id")
-#
-#         if len(storeFieldData) == 1:
-#             raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
-#         if len(storeFieldData) > 1:
-#             raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
-#
-#         if file.content_type not in SUPPORTED_IMAGE_TYPES:
-#             raise HTTPException(status_code=415, detail="Unsupported image type.")
-#         image_bytes = await file.read()
-#         image_np = read_image_for_yolo(image_bytes)
-#         pil_image = Image.fromarray(image_np)
-#
-#         crate_model = get_crate_model()
-#         crate_results = crate_model.predict(source=image_np, conf=0.3, verbose=False)
-#         boxes_info, annotated_image = process_yolo_results_crate_id(crate_results)
-#
-#         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
-#         color_labels = ["BLUE", "RED", "YELLOW"]
-#
-#         session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
-#
-#         for ind, box in enumerate(crate_results[0].obb.xyxy):
-#             x1, y1, x2, y2 = map(int, box)
-#             crop = pil_image.crop((x1, y1, x2, y2))
-#             input_data = preprocess_image_for_onnx(crop, (244, 244))
-#             outputs = session.run([output_name], {input_name: input_data})
-#             class_idx = int(np.argmax(outputs[0]))
-#             boxes_info[ind]["class_id"] = class_idx
-#             color_counts[color_labels[class_idx]] += 1
-#         boxes_info.sort(key=lambda x: x['cy'])
-#         # Prepare annotated image and JSON for S3 upload
-#         img = Image.fromarray(annotated_image)
-#         img_bytes = io.BytesIO()
-#         img.save(img_bytes, format="JPEG")
-#         img_bytes.seek(0)
-#
-#         data_json = {
-#             "scan_type": scan_type,
-#             "app_type": app_type,
-#             "type_of_load": type_of_load,
-#             "store_transfer_type": store_transfer_type,
-#             "android_session_id": android_session_id,
-#             "predictions": boxes_info,
-#             "color_counts": color_counts
-#         }
-#         img_name = f"{uuid.uuid4()}.jpg"
-#         json_name = f"{uuid.uuid4()}.json"
-#         image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
-#         json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
-#
-#         cv2.imshow("Annotated Image", annotated_image)
-#         cv2.waitKey(0)
-#         cv2.destroyAllWindows()
-#
-#
-#         # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
-#         # upload_to_s3(json.dumps(data_json).encode(), json_key, "application/json")
-#
-#
-#
-#
-#         return JSONResponse(status_code=200, content={
-#             "status": "success",
-#             "data":{
-#                 "predictions" : boxes_info,
-#                 "image_key": image_key,
-#                 "image_url": get_s3_url(image_key),
-#                 "blue_count": color_counts["BLUE"],
-#                 "yellow_count": color_counts["YELLOW"],
-#                 "red_count": color_counts["RED"]
-#             },
-#             "message" : "Crate detection done with color classification",
-#             "code" : 200,
-#             "error" : None
-#         })
-#     except Exception as e:
-#         logging.error(f"Crate classification failed: {e}", exc_info=True)
-#         return standard_response(
-#             None,
-#             "Crate detection failed",
-#             400,
-#             str(e)
-#         )
 
 
 @app.post("/predict/marker_detection_classification/")
