@@ -176,6 +176,77 @@ def process_yolo_results_crate_id(results):
     return boxes_info, annotated
 
 
+def process_tflite_obb_results(output_data, image_np, conf_threshold=0.3, iou_threshold=0.5):
+    """
+    Decodes raw YOLOv11/v8 OBB TFLite output: [1, 6, 8400] -> [x, y, w, h, angle, score]
+    """
+    # 1. Transpose output: [1, Channels, Anchors] -> [1, Anchors, Channels]
+    # Shape becomes (1, 8400, 6) typically for 1 class
+    output_data = np.transpose(output_data, (0, 2, 1))
+    predictions = output_data[0]
+
+    boxes_rotated = []
+    scores = []
+    class_ids = []
+
+    # 2. Filter by confidence
+    # Structure: [cx, cy, w, h, angle, class_score_1, class_score_2...]
+    # Assuming single class "crate" based on your previous code
+
+    for row in predictions:
+        # Extract class scores (slice from index 5 onwards)
+        classes_scores = row[5:]
+        class_id = np.argmax(classes_scores)
+        score = classes_scores[class_id]
+
+        if score > conf_threshold:
+            cx, cy, w, h, angle = row[0:5]
+
+            # Convert angle from radians to degrees for OpenCV
+            angle_deg = np.degrees(angle)
+
+            # Store for NMS: ((cx, cy), (w, h), angle_deg)
+            boxes_rotated.append(((cx, cy), (w, h), angle_deg))
+            scores.append(float(score))
+            class_ids.append(int(class_id))
+
+    # 3. Apply NMS (Non-Maximum Suppression)
+    # cv2.dnn.NMSBoxesRotated returns indices of the best boxes
+    indices = cv2.dnn.NMSBoxesRotated(boxes_rotated, scores, conf_threshold, iou_threshold)
+
+    boxes_info = []
+    annotated_image = image_np.copy()
+    box_color = (255, 0, 0)
+
+    if len(indices) > 0:
+        indices = indices.flatten()
+        for i in indices:
+            # Get box details
+            rect = boxes_rotated[i]  # ((cx, cy), (w, h), angle)
+            score = scores[i]
+            cls_id = class_ids[i]
+
+            # Draw OBB
+            box_points = cv2.boxPoints(rect).astype(np.int32)
+            cv2.polylines(annotated_image, [box_points], isClosed=True, color=box_color, thickness=2)
+
+            # Calculate Axis-Aligned Bounding Box (AABB) for cropping later
+            x1, y1 = np.min(box_points, axis=0)
+            x2, y2 = np.max(box_points, axis=0)
+
+            boxes_info.append({
+                "class_id": cls_id,
+                "class_name": "crate",  # Or map cls_id to names if multiple
+                "confidence": round(score, 4),
+                "cx": round(rect[0][0], 4),
+                "cy": round(rect[0][1], 4),
+                "w": round(rect[1][0], 4),
+                "h": round(rect[1][1], 4),
+                "angle": round(rect[2], 4),  # Degrees
+                "bbox": [int(x1), int(y1), int(x2), int(y2)]  # For cropping
+            })
+
+    return boxes_info, annotated_image
 
 def draw_scaled_centered_text(annotated_image, crate_id, bbox):
     x1, y1, x2, y2 = bbox
