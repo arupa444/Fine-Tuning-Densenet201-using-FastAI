@@ -6,7 +6,6 @@ from functools import lru_cache
 from datetime import datetime
 from ultralytics import YOLO
 import onnxruntime as ort
-import tensorflow as tf
 import numpy as np
 import logging
 import base64
@@ -287,20 +286,15 @@ def get_annotated_image_json(scan_type, app_type, type_of_load, store_transfer_t
             str(e)
         )
 
-
+# -------------------- YOLO MODEL LOADING --------------------
 @lru_cache(maxsize=1)
 def get_crate_model():
-    interpreter = tf.lite.Interpreter(model_path="model/jfl_crate_model_obb_01052025_with_nms_conf_0.5_yolo_v11.tflite")
-    interpreter.allocate_tensors()
-    return interpreter
+    return YOLO("model/jfl_crate_model_obb_01052025_with_nms_conf_0.5_yolo_v11.tflite", task="obb")
 
 
 @lru_cache(maxsize=1)
 def get_marker_model():
-    interpreter = tf.lite.Interpreter(model_path="model/jfl_marker_vertical_rotate_28_july_2025_float32_nms_false_yolo_v11.tflite")
-    interpreter.allocate_tensors()
-    return interpreter
-
+    return YOLO("model/jfl_marker_vertical_rotate_28_july_2025_float32_nms_false_yolo_v11.tflite", task="obb")
 
 # -------------------- ONNX MODEL --------------------
 @lru_cache(maxsize=1)
