@@ -58,7 +58,8 @@ def read_image_for_yolo(file_bytes: bytes) -> np.ndarray:
         image = Image.open(io.BytesIO(file_bytes))
         image = ImageOps.exif_transpose(image)
         image = image.convert("RGB")
-        return np.array(image)
+        image_np = np.array(image)
+        return cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid or corrupted image file.")
 
@@ -456,8 +457,8 @@ async def predict_marker(
         _, annotated_image = process_yolo_results_crate_id(crate_results)  # crates in RED
 
         # ------------------ COLOR CLASSIFICATION ------------------
-        color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
-        color_labels = ["BLUE", "RED", "YELLOW"]
+        color_counts = {"YELLOW": 0, "BLUE": 0, "RED": 0}
+        color_labels = ["YELLOW", "BLUE", "RED"]
         color_session, color_input, color_output = get_onnx_session("model/color_classifier.onnx")
 
         # ------------------ MARKER MODELS ------------------
@@ -504,8 +505,8 @@ async def predict_marker(
             color_out = color_session.run([color_output], {color_input: input_data})
             color_idx = int(np.argmax(color_out[0]))
             color_label = color_labels[color_idx]
-            if color_label in ["YELLOW", "RED"]:
-                continue
+            # if color_label in ["YELLOW", "RED"]:
+            #     continue
             color_counts[color_label] += 1
 
             # ---- Step 2: Marker Detection ----
