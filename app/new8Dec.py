@@ -52,16 +52,81 @@ def get_s3_url(key: str) -> str:
     return f"https://{BUCKET_NAME}.s3.amazonaws.com/{key}"
 
 
+def letterbox(image, new_shape=(640, 640), color=(114, 114, 114), auto=False,
+              scaleFill=False, scaleup=True, stride=32):
 
-def read_image_for_yolo(file_bytes: bytes) -> np.ndarray:
+    shape = image.shape[:2]  # current shape [height, width]
+
+    if isinstance(new_shape, int):
+        new_shape = (new_shape, new_shape)
+
+    # Scale ratio (new / old)
+    r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
+
+    if not scaleup:  # only scale down, do not scale up (for better mAP)
+        r = min(r, 1.0)
+
+    # Compute padding
+    ratio = r, r  # width, height ratios
+    new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
+    dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
+
+    if auto:  # minimum rectangle
+        dw, dh = np.mod(dw, stride), np.mod(dh, stride)  # wh padding
+    elif scaleFill:  # stretch
+        dw, dh = 0.0, 0.0
+        new_unpad = (new_shape[1], new_shape[0])
+        ratio = new_shape[1] / shape[1], new_shape[0] / shape[0]  # width, height ratios
+
+    dw /= 2  # divide padding into 2 sides
+    dh /= 2
+
+    if shape[::-1] != new_unpad:  # resize
+        image = cv2.resize(image, new_unpad, interpolation=cv2.INTER_LINEAR)
+
+    top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+    left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+
+    image = cv2.copyMakeBorder(image, top, bottom, left, right,
+                               cv2.BORDER_CONSTANT, value=color)
+
+    return image, ratio, (dw, dh)
+
+
+def letterbox_for_marker_crop(crop_image, target_size=640):
+
+    # Convert PIL to numpy if needed
+    if isinstance(crop_image, Image.Image):
+        crop_np = np.array(crop_image)
+        crop_bgr = cv2.cvtColor(crop_np, cv2.COLOR_RGB2BGR)
+    else:
+        crop_bgr = crop_image
+
+    # Apply letterbox
+    letterboxed, _, _ = letterbox(crop_bgr, new_shape=target_size)
+
+    return letterboxed
+
+
+def read_image_for_yolo(file_bytes: bytes, target_size=640) -> tuple:
+
     try:
+        # Read image
         image = Image.open(io.BytesIO(file_bytes))
-        image = ImageOps.exif_transpose(image)
+        image = ImageOps.exif_transpose(image)  # Handle EXIF rotation
         image = image.convert("RGB")
+
+        # Convert to numpy (BGR format for OpenCV/YOLO)
         image_np = np.array(image)
-        return cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid or corrupted image file.")
+        image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+
+        # Apply letterbox
+        letterboxed, ratio, padding = letterbox(image_bgr, new_shape=target_size)
+
+        return letterboxed, image_bgr, ratio, padding
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid image: {str(e)}")
 
 
 def process_yolo_results(results):
@@ -337,11 +402,13 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         if file.content_type not in SUPPORTED_IMAGE_TYPES:
             raise HTTPException(status_code=415, detail="Unsupported image type.")
         image_bytes = await file.read()
-        image_np = read_image_for_yolo(image_bytes)
-        pil_image = Image.fromarray(image_np)
+        letterboxed_image, original_image, ratio, padding = read_image_for_yolo(
+            image_bytes,
+            target_size=640
+        )
 
         crate_model = get_crate_model()
-        crate_results = crate_model.predict(source=image_np, conf=0.3, verbose=False)
+        crate_results = crate_model.predict(source=letterboxed_image, conf=0.5, imgsz=640, verbose=False)
         boxes_info, annotated_image = process_yolo_results_crate_id(crate_results)
 
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
@@ -352,8 +419,9 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
 
         for ind, box in enumerate(crate_results[0].obb.xyxy):
             x1, y1, x2, y2 = map(int, box)
-            crop = pil_image.crop((x1, y1, x2, y2))
-            input_data = preprocess_image_for_onnx(crop, (244, 244))
+            crop_np = letterboxed_image[y1:y2, x1:x2]
+            crop = Image.fromarray(cv2.cvtColor(crop_np, cv2.COLOR_BGR2RGB))
+            input_data = preprocess_image_for_onnx(crop, (224, 224))
             outputs = session.run([output_name], {input_name: input_data})
             class_idx = int(np.argmax(outputs[0]))
             boxes_info[ind]["class_id"] = class_idx
@@ -448,17 +516,19 @@ async def predict_marker(
 
         # ------------------ LOAD IMAGE ------------------
         image_bytes = await file.read()
-        image_np = read_image_for_yolo(image_bytes)  #input_tensor after applying the padding
-        pil_image = Image.fromarray(image_np)
+        letterboxed_image, original_image, ratio, padding = read_image_for_yolo(
+            image_bytes,
+            target_size=640
+        )
 
         # ------------------ CRATE DETECTION ------------------
         crate_model = get_crate_model()
-        crate_results = crate_model.predict(source=image_np, conf=0.50, iou=0.5,imgsz=640,verbose=False)
+        crate_results = crate_model.predict(source=letterboxed_image, conf=0.5, iou=0.5, imgsz=640, verbose=False)
         _, annotated_image = process_yolo_results_crate_id(crate_results)  # crates in RED
 
         # ------------------ COLOR CLASSIFICATION ------------------
-        color_counts = {"YELLOW": 0, "BLUE": 0, "RED": 0}
-        color_labels = ["YELLOW", "BLUE", "RED"]
+        color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
+        color_labels = ["BLUE", "RED", "YELLOW"]
 
         color_session, color_input, color_output = get_onnx_session("model/color_classifier.onnx")
 
@@ -498,11 +568,12 @@ async def predict_marker(
 
         for ind, crate_box in enumerate(crate_results[0].obb.xyxy):
             x1, y1, x2, y2 = map(int, crate_box)
-            crate_crop = pil_image.crop((x1, y1, x2, y2))
+            crop_np = letterboxed_image[y1:y2, x1:x2]
+            crate_crop = Image.fromarray(cv2.cvtColor(crop_np, cv2.COLOR_BGR2RGB))
             # apply the paading if needed
 
             # ---- Step 1: Color Classification ----
-            input_data = preprocess_image_for_onnx(crate_crop, (244, 244))
+            input_data = preprocess_image_for_onnx(crate_crop, (224, 224))
             color_out = color_session.run([color_output], {color_input: input_data})
             color_idx = int(np.argmax(color_out[0]))
             color_label = color_labels[color_idx]
@@ -519,6 +590,11 @@ async def predict_marker(
             classified_markers = []
             for i, m_box in enumerate(marker_results[0].obb.xyxy):
                 mx1, my1, mx2, my2 = map(int, m_box)
+                padding = 5
+                mx1 = max(0, mx1 - padding)
+                my1 = max(0, my1 - padding)
+                mx2 = min(crate_crop.width, mx2 + padding)
+                my2 = min(crate_crop.height, my2 + padding)
                 marker_crop = crate_crop.crop((mx1, my1, mx2, my2))
                 marker_input = preprocess_image_for_onnx_marker(marker_crop, (64, 64))
                 cls_output = marker_cls_session.run([marker_cls_output], {marker_cls_input: marker_input})
