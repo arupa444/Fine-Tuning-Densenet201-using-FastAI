@@ -378,6 +378,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
         color_labels = ["BLUE", "RED", "YELLOW"]
 
+
         session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
 
         for ind, box in enumerate(crate_results[0].obb.xyxy):
