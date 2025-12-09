@@ -459,6 +459,7 @@ async def predict_marker(
         # ------------------ COLOR CLASSIFICATION ------------------
         color_counts = {"YELLOW": 0, "BLUE": 0, "RED": 0}
         color_labels = ["YELLOW", "BLUE", "RED"]
+
         color_session, color_input, color_output = get_onnx_session("model/color_classifier.onnx")
 
         # ------------------ MARKER MODELS ------------------
