@@ -53,39 +53,12 @@ def get_s3_url(key: str) -> str:
 
 
 
-def read_image_for_yolo(
-        file_bytes: bytes,
-        target_size: tuple = (640, 640),
-        padding_color: tuple = (114, 114, 114)
-) -> np.ndarray:
+def read_image_for_yolo(file_bytes: bytes) -> np.ndarray:
     try:
         image = Image.open(io.BytesIO(file_bytes))
         image = ImageOps.exif_transpose(image)
-
-
-        # Letterbox padding
-        original_width, original_height = image.size
-        target_width, target_height = target_size
-
-        # Calculate scaling factor to fit image within target size
-        scale = min(target_width / original_width, target_height / original_height)
-        new_width = int(original_width * scale)
-        new_height = int(original_height * scale)
-
-        # Resize image
-        image = image.resize((new_width, new_height), Image.LANCZOS)
-
-        # Create letterbox with padding color
-        letterbox = Image.new("RGB", target_size, padding_color)
-
-        # Calculate position to paste resized image (center it)
-        paste_x = (target_width - new_width) // 2
-        paste_y = (target_height - new_height) // 2
-
-        # Paste resized image onto letterbox
-        letterbox.paste(image, (paste_x, paste_y))
-
-        return np.array(letterbox)
+        image = image.convert("RGB")
+        return np.array(image)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid or corrupted image file.")
 
@@ -314,11 +287,6 @@ def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
 
 
 def preprocess_image_for_onnx_marker(image: Image.Image, size) -> np.ndarray:
-    # Pad to square before resize
-    image = image.convert("RGB")
-    image = image.convert("L")
-    # Convert back to RGB format (3 channels) for YOLO compatibility
-    image = image.convert("RGB")
     w, h = image.size
     max_dim = max(w, h)
     padded = Image.new('RGB', (max_dim, max_dim), (0, 0, 0))
