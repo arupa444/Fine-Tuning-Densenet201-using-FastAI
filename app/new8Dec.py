@@ -112,7 +112,7 @@ def process_yolo_results_crate_id(results):
     obb = results[0].obb
     annotated = results[0].orig_img.copy()
 
-    box_color = (255, 0, 0)
+    box_color = (0, 0, 255)
 
     for i in range(len(obb.conf)):
         cx, cy, w, h, angle = map(float, obb.xywhr[i])
