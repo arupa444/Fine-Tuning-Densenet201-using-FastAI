@@ -507,9 +507,9 @@ async def predict_marker(
             color_out = color_session.run([color_output], {color_input: input_data})
             color_idx = int(np.argmax(color_out[0]))
             color_label = color_labels[color_idx]
+            color_counts[color_label] += 1
             if color_label in ["YELLOW", "RED"]:
                 continue
-            color_counts[color_label] += 1
 
             # ---- Step 2: Marker Detection ----
             marker_np = cv2.cvtColor(np.array(crate_crop), cv2.COLOR_RGB2BGR)
