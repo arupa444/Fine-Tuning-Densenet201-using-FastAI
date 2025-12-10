@@ -1,0 +1,674 @@
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
+from botocore.exceptions import NoCredentialsError
+from fastapi.responses import JSONResponse
+from PIL import Image, ImageOps
+from functools import lru_cache
+from datetime import datetime
+from ultralytics import YOLO
+import onnxruntime as ort
+import numpy as np
+import logging
+import boto3
+import uuid
+import json
+import cv2
+import io
+
+# -------------------- CONFIG --------------------
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+app = FastAPI()
+
+BUCKET_NAME = "tracksure-jfl-dev"
+s3 = boto3.client("s3")
+
+SUPPORTED_IMAGE_TYPES = [
+    "image/jpeg", "image/png", "image/bmp", "image/tiff", "image/webp"
+]
+
+
+# -------------------- HELPERS --------------------
+
+def upload_to_s3(file_bytes, key, content_type="image/jpeg"):
+    try:
+        s3.put_object(Bucket=BUCKET_NAME, Key=key, Body=file_bytes, ContentType=content_type)
+        return key
+    except NoCredentialsError:
+        raise HTTPException(status_code=500, detail="AWS credentials not found.")
+
+
+def generate_s3_key(app_type: str, session_id: str, type_of_load: str, store_transfer_type: str,
+                    image_name: str) -> str:
+    """Mimics Android logic for S3 key generation."""
+    date = datetime.now().strftime("%d-%m-%Y")
+    if app_type in ["DriverApp", "SCCApp"]:
+        return f"{app_type}/{date}/{session_id}/{type_of_load}/{image_name}"
+    else:
+        if type_of_load == "store_crate_inventory":
+            return f"{app_type}/{date}/{session_id}/{store_transfer_type}/{image_name}"
+        else:
+            return f"{app_type}/{date}/{session_id}/{store_transfer_type}/{type_of_load}/{image_name}"
+
+
+def get_s3_url(key: str) -> str:
+    return f"https://{BUCKET_NAME}.s3.amazonaws.com/{key}"
+
+
+# -------------------- LETTERBOX FUNCTION --------------------
+def letterbox(image, new_shape=640, color=(114, 114, 114), auto=False,
+              scaleFill=False, scaleup=True, stride=32):
+    """
+    Resize and pad image while maintaining aspect ratio (YOLO letterbox).
+
+    Args:
+        image: Input image (numpy array in BGR format)
+        new_shape: Target size (int or tuple)
+        color: Padding color (BGR)
+        auto: Minimum rectangle
+        scaleFill: Stretch to fill
+        scaleup: Allow scaling up
+        stride: Model stride
+
+    Returns:
+        Letterboxed image
+    """
+    shape = image.shape[:2]  # current [height, width]
+
+    if isinstance(new_shape, int):
+        new_shape = (new_shape, new_shape)
+
+    # Scale ratio (new / old)
+    r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
+    if not scaleup:
+        r = min(r, 1.0)
+
+    # Compute padding
+    new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
+    dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]
+
+    if auto:
+        dw, dh = np.mod(dw, stride), np.mod(dh, stride)
+    elif scaleFill:
+        dw, dh = 0.0, 0.0
+        new_unpad = (new_shape[1], new_shape[0])
+
+    dw /= 2
+    dh /= 2
+
+    if shape[::-1] != new_unpad:
+        image = cv2.resize(image, new_unpad, interpolation=cv2.INTER_LINEAR)
+
+    top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+    left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+
+    image = cv2.copyMakeBorder(image, top, bottom, left, right,
+                               cv2.BORDER_CONSTANT, value=color)
+
+    return image
+
+
+def read_image_for_yolo(file_bytes: bytes, target_size=640) -> np.ndarray:
+    """
+    Read image, apply EXIF rotation, convert to BGR, and apply letterbox.
+
+    Returns:
+        Letterboxed image ready for YOLO (BGR format)
+    """
+    try:
+        image = Image.open(io.BytesIO(file_bytes))
+        image = ImageOps.exif_transpose(image)
+        image = image.convert("RGB")
+        image_np = np.array(image)
+        image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+
+        # Apply letterbox padding
+        letterboxed = letterbox(image_bgr, new_shape=target_size)
+
+        return letterboxed
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid image: {str(e)}")
+
+
+def process_yolo_results(results):
+    """Process YOLO OBB results and draw boxes."""
+    boxes_info = []
+    obb = results[0].obb
+    annotated = results[0].orig_img.copy()
+
+    box_color = (0, 0, 255)  # Red in BGR
+
+    for i in range(len(obb.conf)):
+        cx, cy, w, h, angle = map(float, obb.xywhr[i])
+        confidence = float(obb.conf[i])
+        clsId = int(obb.cls[i])
+        label = results[0].names[clsId]
+
+        # Convert OBB to 4 corner points
+        angle_deg = np.degrees(angle)
+        rect = ((cx, cy), (w, h), angle_deg)
+        box = cv2.boxPoints(rect)
+        box = box.astype(np.int32)
+
+        # Draw oriented bounding box
+        cv2.polylines(annotated, [box], isClosed=True, color=box_color, thickness=2)
+
+        # Compute axis-aligned bounding box
+        x1, y1 = int(box[:, 0].min()), int(box[:, 1].min())
+        x2, y2 = int(box[:, 0].max()), int(box[:, 1].max())
+
+        boxes_info.append({
+            "class_id": clsId,
+            "class_name": label,
+            "confidence": round(confidence, 4),
+            "cx": round(cx, 4),
+            "cy": round(cy, 4),
+            "w": round(w, 4),
+            "h": round(h, 4),
+            "angle": round(angle, 4),
+            "bbox": [x1, y1, x2, y2]
+        })
+
+    return boxes_info, annotated
+
+
+def process_yolo_results_crate_id(results):
+    """Process YOLO OBB results without storing bbox."""
+    boxes_info = []
+    obb = results[0].obb
+    annotated = results[0].orig_img.copy()
+
+    box_color = (0, 0, 255)
+
+    for i in range(len(obb.conf)):
+        cx, cy, w, h, angle = map(float, obb.xywhr[i])
+        confidence = float(obb.conf[i])
+        clsId = int(obb.cls[i])
+        label = results[0].names[clsId]
+
+        angle_deg = np.degrees(angle)
+        rect = ((cx, cy), (w, h), angle_deg)
+        box = cv2.boxPoints(rect)
+        box = box.astype(np.int32)
+
+        cv2.polylines(annotated, [box], isClosed=True, color=box_color, thickness=2)
+
+        boxes_info.append({
+            "class_id": clsId,
+            "class_name": label,
+            "confidence": round(confidence, 4),
+            "cx": round(cx, 4),
+            "cy": round(cy, 4),
+            "w": round(w, 4),
+            "h": round(h, 4),
+            "angle": round(angle, 4),
+        })
+
+    return boxes_info, annotated
+
+
+def draw_scaled_centered_text(annotated_image, crate_id, bbox):
+    """Draw crate ID text centered on crate."""
+    x1, y1, x2, y2 = bbox
+    w = x2 - x1
+    h = y2 - y1
+
+    font = cv2.FONT_HERSHEY_DUPLEX
+    font_scale = max(0.5, min(2.2, h / 85))
+    thickness = int(max(1, int(font_scale * 2.2)))
+    char_spacing = int(font_scale * 18)
+    color = (0, 255, 150)  # Neon green
+
+    char_widths = []
+    total_width = 0
+    max_h = 0
+
+    for ch in crate_id:
+        (cw, chh), _ = cv2.getTextSize(ch, font, font_scale, thickness)
+        char_widths.append(cw)
+        total_width += cw
+        max_h = max(max_h, chh)
+
+    if len(crate_id) > 1:
+        total_width += char_spacing * (len(crate_id) - 1)
+
+    start_x = x1 + (w - total_width) // 2
+    text_y = y1 + (h // 2) + (max_h // 2)
+    current_x = start_x
+
+    for i, ch in enumerate(crate_id):
+        cv2.putText(
+            annotated_image,
+            ch,
+            (int(current_x), int(text_y)),
+            font,
+            font_scale,
+            color,
+            thickness,
+            cv2.LINE_AA
+        )
+        current_x += char_widths[i] + char_spacing
+
+
+def standard_response(data, message, code, error=None):
+    return JSONResponse(
+        status_code=code,
+        content={
+            "data": data,
+            "message": message,
+            "code": code,
+            "error": error
+        }
+    )
+
+
+# -------------------- MODEL LOADING --------------------
+@lru_cache(maxsize=1)
+def get_crate_model():
+    return YOLO("model/jfl_crate_model_obb_01052025_with_nms_conf_0.5_yolo_v11.tflite", task="obb")
+
+
+@lru_cache(maxsize=1)
+def get_marker_model():
+    return YOLO("model/jfl_marker_vertical_rotate_28_july_2025_float32_nms_false_yolo_v11.tflite", task="obb")
+
+
+@lru_cache(maxsize=1)
+def get_onnx_session(model_path):
+    session = ort.InferenceSession(model_path)
+    input_name = session.get_inputs()[0].name
+    output_name = session.get_outputs()[0].name
+    return session, input_name, output_name
+
+
+# -------------------- PREPROCESSING --------------------
+def preprocess_image_for_onnx(image: Image.Image, size) -> np.ndarray:
+    """
+    Preprocess image for ONNX color classifier with ImageNet normalization.
+    """
+    image = image.resize(size)
+    image_array = np.array(image, dtype=np.float32) / 255.0
+
+    # ImageNet normalization
+    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+    image_array = (image_array - mean) / std
+
+    image_array = np.transpose(image_array, (2, 0, 1))
+    image_array = np.expand_dims(image_array, axis=0)
+    return image_array.astype(np.float32)
+
+
+def preprocess_image_for_onnx_marker(image: Image.Image, size) -> np.ndarray:
+    """
+    Preprocess marker image with square padding and ImageNet normalization.
+    """
+    w, h = image.size
+    max_dim = max(w, h)
+    padded = Image.new('RGB', (max_dim, max_dim), (0, 0, 0))
+    padded.paste(image, ((max_dim - w) // 2, (max_dim - h) // 2))
+
+    resized = padded.resize(size)
+    image_array = np.array(resized, dtype=np.float32) / 255.0
+
+    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+    image_array = (image_array - mean) / std
+
+    image_array = np.transpose(image_array, (2, 0, 1))
+    image_array = np.expand_dims(image_array, axis=0)
+
+    return image_array.astype(np.float32)
+
+
+# -------------------- ENDPOINTS --------------------
+
+@app.post("/predict/crate_detection_classification/")
+async def predict_crate_with_color(
+        scan_type: str = Form(None),
+        app_type: str = Form(None),
+        type_of_load: str = Form(None),
+        store_transfer_type: str = Form(None),
+        android_session_id: str = Form(None),
+        file: UploadFile = File(...)
+):
+    try:
+        # Validation
+        storeFieldData = []
+        factorsToValidate = ['', None, "nil", 'none']
+
+        if scan_type in factorsToValidate:
+            storeFieldData.append("scan_type")
+        if app_type in factorsToValidate:
+            storeFieldData.append("app_type")
+        if type_of_load in factorsToValidate:
+            storeFieldData.append("type_of_load")
+        if store_transfer_type in factorsToValidate:
+            storeFieldData.append("store_transfer_type")
+        if android_session_id in factorsToValidate:
+            storeFieldData.append("android_session_id")
+
+        if len(storeFieldData) == 1:
+            raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+        if len(storeFieldData) > 1:
+            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported image type.")
+
+        # Load and preprocess image with letterbox
+        image_bytes = await file.read()
+        image_np = read_image_for_yolo(image_bytes, target_size=640)
+
+        # Crate detection
+        crate_model = get_crate_model()
+        crate_results = crate_model.predict(source=image_np, conf=0.5, imgsz=640, verbose=False)
+        boxes_info, annotated_image = process_yolo_results_crate_id(crate_results)
+
+        # Color classification
+        color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
+        color_labels = ["BLUE", "RED", "YELLOW"]
+
+        session, input_name, output_name = get_onnx_session("model/color_classifier.onnx")
+
+        for ind, box in enumerate(crate_results[0].obb.xyxy):
+            x1, y1, x2, y2 = map(int, box)
+            crop_np = image_np[y1:y2, x1:x2]
+            crop = Image.fromarray(cv2.cvtColor(crop_np, cv2.COLOR_BGR2RGB))
+
+            input_data = preprocess_image_for_onnx(crop, (224, 224))
+            outputs = session.run([output_name], {input_name: input_data})
+            class_idx = int(np.argmax(outputs[0]))
+
+            boxes_info[ind]["class_id"] = class_idx
+            color_counts[color_labels[class_idx]] += 1
+
+        boxes_info.sort(key=lambda x: x['cy'])
+
+        # Prepare response
+        img = Image.fromarray(cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB))
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format="JPEG")
+        img_bytes.seek(0)
+
+        img_name = f"{uuid.uuid4()}.jpg"
+        json_name = f"{uuid.uuid4()}.json"
+        image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
+        json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
+
+        data_json = {
+            "scan_type": scan_type,
+            "app_type": app_type,
+            "type_of_load": type_of_load,
+            "store_transfer_type": store_transfer_type,
+            "android_session_id": android_session_id,
+            "predictions": boxes_info,
+            "color_counts": color_counts
+        }
+
+        cv2.imshow("Annotated Image", annotated_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+        # Uncomment to upload to S3
+        # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
+        # upload_to_s3(json.dumps(data_json).encode(), json_key, "application/json")
+
+        return JSONResponse(status_code=200, content={
+            "status": "success",
+            "data": {
+                "predictions": boxes_info,
+                "image_key": image_key,
+                "image_url": get_s3_url(image_key),
+                "blue_count": color_counts["BLUE"],
+                "yellow_count": color_counts["YELLOW"],
+                "red_count": color_counts["RED"]
+            },
+            "message": "Crate detection done with color classification",
+            "code": 200,
+            "error": None
+        })
+
+    except Exception as e:
+        logging.error(f"Crate classification failed: {e}", exc_info=True)
+        return standard_response(None, "Crate detection failed", 400, str(e))
+
+
+@app.post("/predict/marker_detection_classification/")
+async def predict_marker(
+        scan_type: str = Form(None),
+        app_type: str = Form(None),
+        type_of_load: str = Form(None),
+        store_transfer_type: str = Form(None),
+        android_session_id: str = Form(None),
+        file: UploadFile = File(...)
+):
+    try:
+        # Validation
+        storeFieldData = []
+        factorsToValidate = ['', None, "nil", 'none']
+
+        if scan_type in factorsToValidate:
+            storeFieldData.append("scan_type")
+        if app_type in factorsToValidate:
+            storeFieldData.append("app_type")
+        if type_of_load in factorsToValidate:
+            storeFieldData.append("type_of_load")
+        if store_transfer_type in factorsToValidate:
+            storeFieldData.append("store_transfer_type")
+        if android_session_id in factorsToValidate:
+            storeFieldData.append("android_session_id")
+
+        if len(storeFieldData) == 1:
+            raise HTTPException(status_code=400, detail=f"{storeFieldData[0]} field is missing")
+        if len(storeFieldData) > 1:
+            raise HTTPException(status_code=400, detail=f"{', '.join(storeFieldData)} fields are missing")
+
+        if file.content_type not in SUPPORTED_IMAGE_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported image type.")
+
+        # Load and preprocess image with letterbox
+        image_bytes = await file.read()
+        image_np = read_image_for_yolo(image_bytes, target_size=640)
+
+        # Crate detection
+        crate_model = get_crate_model()
+        crate_results = crate_model.predict(source=image_np, conf=0.5, iou=0.5, imgsz=640, verbose=False)
+        _, annotated_image = process_yolo_results_crate_id(crate_results)
+
+        # Color classification setup
+        color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
+        color_labels = ["BLUE", "RED", "YELLOW"]
+        color_session, color_input, color_output = get_onnx_session("model/color_classifier.onnx")
+
+        # Marker models
+        marker_model = get_marker_model()
+        marker_cls_session, marker_cls_input, marker_cls_output = get_onnx_session(
+            "model/marker_classification_efficientnet_21st_aug_2025_fp16.onnx"
+        )
+
+        # Label map
+        labelDecodeMap = {
+            "filled_circle": "0",
+            "filled_rectangle_vertical": "1",
+            "filled_semicircle_arc_bottom": "2",
+            "filled_semicircle_arc_left": "3",
+            "filled_semicircle_arc_right": "4",
+            "filled_semicircle_arc_top": "5",
+            "filled_triangle_base_bottom": "7",
+            "filled_triangle_base_left": "8",
+            "filled_triangle_base_right": "9",
+            "filled_triangle_base_top": "A",
+            "hollow_circle": "B",
+            "hollow_rectangle_vertical": "C",
+            "hollow_semicircle_arc_bottom": "D",
+            "hollow_semicircle_arc_left": "E",
+            "hollow_semicircle_arc_right": "F",
+            "hollow_semicircle_arc_top": "G",
+            "hollow_triangle_base_bottom": "I",
+            "hollow_triangle_base_left": "J",
+            "hollow_triangle_base_right": "K",
+            "hollow_triangle_base_top": "L",
+            "other": "other"
+        }
+
+        final_crates = []
+
+        for ind, crate_box in enumerate(crate_results[0].obb.xyxy):
+            x1, y1, x2, y2 = map(int, crate_box)
+            crop_np = image_np[y1:y2, x1:x2]
+            crate_crop = Image.fromarray(cv2.cvtColor(crop_np, cv2.COLOR_BGR2RGB))
+
+            # Color classification
+            input_data = preprocess_image_for_onnx(crate_crop, (224, 224))
+            color_out = color_session.run([color_output], {color_input: input_data})
+            color_idx = int(np.argmax(color_out[0]))
+            color_label = color_labels[color_idx]
+
+            if color_label in ["YELLOW", "RED"]:
+                continue
+            color_counts[color_label] += 1
+
+            # Marker detection - apply letterbox to crop
+            marker_crop_bgr = cv2.cvtColor(np.array(crate_crop), cv2.COLOR_RGB2BGR)
+            # marker_letterboxed = letterbox(marker_crop_bgr, new_shape=640)
+
+            marker_results = marker_model.predict(
+                source=marker_crop_bgr,
+                conf=0.5,
+                imgsz=640,  # CRITICAL: Must match letterbox size
+                verbose=False
+            )
+
+            # Marker classification
+            classified_markers = []
+            for i, m_box in enumerate(marker_results[0].obb.xyxy):
+                mx1, my1, mx2, my2 = map(int, m_box)
+
+                # Add padding
+                padding = 5
+                mx1 = max(0, mx1 - padding)
+                my1 = max(0, my1 - padding)
+                mx2 = min(marker_crop_bgr.shape[1], mx2 + padding)
+                my2 = min(marker_crop_bgr.shape[0], my2 + padding)
+
+                marker_crop_np = marker_crop_bgr[my1:my2, mx1:mx2]
+                marker_crop_pil = Image.fromarray(cv2.cvtColor(marker_crop_np, cv2.COLOR_BGR2RGB))
+
+                marker_input = preprocess_image_for_onnx_marker(marker_crop_pil, (64, 64))
+                cls_output = marker_cls_session.run([marker_cls_output], {marker_cls_input: marker_input})
+                cls_idx = int(np.argmax(cls_output[0]))
+
+                # Decode label
+                if 0 <= cls_idx < len(labelDecodeMap.keys()):
+                    decoded_label = list(labelDecodeMap.keys())[cls_idx]
+                    encoded_value = labelDecodeMap[decoded_label]
+                else:
+                    decoded_label = "unknown"
+                    encoded_value = "?"
+
+                m_confidence = float(marker_results[0].obb.conf[i])
+                m_cx, m_cy, m_w, m_h, m_angle = map(float, marker_results[0].obb.xywhr[i])
+
+                classified_markers.append({
+                    "confidence": round(m_confidence, 4),
+                    "cx": round(m_cx, 4),
+                    "cy": round(m_cy, 4),
+                    "w": round(m_w, 4),
+                    "h": round(m_h, 4),
+                    "angle": round(m_angle, 4),
+                    "class_index": cls_idx,
+                    "decoded_label": decoded_label,
+                    "encoded_value": encoded_value
+                })
+
+            if len(classified_markers) > 6:
+                classified_markers.sort(key=lambda x: x["confidence"], reverse=True)
+                classified_markers = classified_markers[:6]
+
+            classified_markers.sort(key=lambda x: x['cx'])
+            crate_id = ''.join(str(m["encoded_value"]) for m in classified_markers)
+            c_confidence = float(crate_results[0].obb.conf[ind])
+            c_cx, c_cy, c_w, c_h, c_angle = map(float, crate_results[0].obb.xywhr[ind])
+
+            final_crates.append({
+                "crate_bbox": {
+                    "class_index": color_idx,
+                    "confidence": round(c_confidence, 4),
+                    "cx": round(c_cx, 4),
+                    "cy": round(c_cy, 4),
+                    "w": round(c_w, 4),
+                    "h": round(c_h, 4),
+                    "angle": round(c_angle, 4),
+                    # "bbox": [x1, y1, x2, y2]  # Using "bbox" to avoid confusion with the parent key
+                },
+                "color": color_label,
+                "crate_id": crate_id,
+                "markers": classified_markers
+            })
+            if crate_id:
+                draw_scaled_centered_text(annotated_image, crate_id, (x1, y1, x2, y2))
+
+        final_crates.sort(key=lambda x: x['crate_bbox']['cy'])
+
+        timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+        unique_id = str(uuid.uuid4())
+
+        img_name = f"crate_{unique_id}_{timestamp}.jpg"
+        json_name = f"crate_metadata_{unique_id}_{timestamp}.json"
+        image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
+        json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
+
+        # Convert annotated image to bytes
+        img = Image.fromarray(annotated_image)
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format="JPEG")
+        img_bytes.seek(0)
+        img_size_kb = len(img_bytes.getvalue()) / 1024
+        print(color_counts)
+
+
+        data_json = {
+            "bucket": BUCKET_NAME,
+            "scan_type": scan_type,
+            "app_type": app_type,
+            "type_of_load": type_of_load,
+            "store_transfer_type": store_transfer_type,
+            "android_session_id": android_session_id,
+            "crates": final_crates,
+            "color_counts": color_counts,
+            "image_size_kb": round(img_size_kb, 2),
+            "image_key": image_key,
+            "json_key": json_key,
+            "image_url": get_s3_url(image_key),
+            "json_url": get_s3_url(json_key)
+        }
+
+        cv2.imshow("Annotated Image", annotated_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+        # ---------- Upload to S3 ----------
+        # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
+        # upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
+
+
+        # ------------------ RETURN RESPONSE ------------------
+        return JSONResponse(status_code=200, content={
+            "status": "success",
+            "data": {
+                "crates": final_crates,
+                "image_key": image_key,
+                "image_url": get_s3_url(image_key),
+            },
+            "message": "Crate detection, color classification, marker detection and classification completed",
+            "code": 200,
+            "error": None
+        })
+
+    except Exception as e:
+        logging.error(f"Crate with color + marker classification failed: {e}", exc_info=True)
+        return standard_response(
+            None,
+            "Crate detection failed",
+            400,
+            str(e)
+        )

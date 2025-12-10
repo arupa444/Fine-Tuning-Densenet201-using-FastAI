@@ -364,6 +364,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         img.save(img_bytes, format="JPEG")
         img_bytes.seek(0)
 
+
         data_json = {
             "scan_type": scan_type,
             "app_type": app_type,
@@ -378,9 +379,11 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
         json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
 
-        cv2.imshow("Annotated Image", annotated_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        cv2.imwrite(f"testImages/{file.filename}Output.jpg", annotated_image)
+        print(f"Saved image {file.filename}Output.jpg")
+        # cv2.imshow("Annotated Image", annotated_image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
 
         # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
@@ -498,7 +501,6 @@ async def predict_marker(
             x1, y1, x2, y2 = map(int, crate_box)
             crop_np = image_np[y1:y2, x1:x2]
             crate_crop = Image.fromarray(cv2.cvtColor(crop_np, cv2.COLOR_BGR2RGB))
-            # apply the paading if needed
 
             # ---- Step 1: Color Classification ----
             input_data = preprocess_image_for_onnx(crate_crop, (224, 224))
@@ -510,9 +512,9 @@ async def predict_marker(
             color_counts[color_label] += 1
 
             # ---- Step 2: Marker Detection ----
-            marker_np = np.array(crate_crop)
-            marker_results = marker_model.predict(source=marker_np, conf=0.5, verbose=False)
-            marker_boxes_info, _ = process_yolo_results(marker_results)
+            marker_np = cv2.cvtColor(np.array(crate_crop), cv2.COLOR_RGB2BGR)
+            marker_results = marker_model.predict(source=marker_np, conf=0.5, imgsz=640, verbose=False)
+            # marker_boxes_info, _ = process_yolo_results(marker_results)
 
             # ---- Step 3: Marker Classification ----
             classified_markers = []
@@ -521,10 +523,11 @@ async def predict_marker(
                 padding = 5
                 mx1 = max(0, mx1 - padding)
                 my1 = max(0, my1 - padding)
-                mx2 = min(crate_crop.width, mx2 + padding)
-                my2 = min(crate_crop.height, my2 + padding)
-                marker_crop = crate_crop.crop((mx1, my1, mx2, my2))
-                marker_input = preprocess_image_for_onnx_marker(marker_crop, (64, 64))
+                mx2 = min(marker_np.shape[1], mx2 + padding)
+                my2 = min(marker_np.shape[0], mx2 + padding)
+                marker_crop = marker_np[my1:my2, mx1:mx2]
+                marker_crop_pil = Image.fromarray(cv2.cvtColor(marker_crop, cv2.COLOR_BGR2RGB))
+                marker_input = preprocess_image_for_onnx_marker(marker_crop_pil, (64, 64))
                 cls_output = marker_cls_session.run([marker_cls_output], {marker_cls_input: marker_input})
                 cls_idx = int(np.argmax(cls_output[0]))
 
@@ -553,9 +556,9 @@ async def predict_marker(
                     "encoded_value": encoded_value
                 })
 
-            classified_markers.sort(key=lambda x: x['confidence'])
-
-            classified_markers = classified_markers[:6]
+            if len(classified_markers) > 6:
+                classified_markers.sort(key=lambda x: x["confidence"], reverse=True)
+                classified_markers = classified_markers[:6]
 
             classified_markers.sort(key=lambda x: x['cx'])
             crate_id = ''.join(str(m["encoded_value"]) for m in classified_markers)
@@ -614,10 +617,11 @@ async def predict_marker(
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key)
         }
-
-        cv2.imshow("Annotated Image", annotated_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        cv2.imwrite(f"testImages/{file.filename}Output.jpg", annotated_image)
+        print(f"Saved image {file.filename}Output.jpg")
+        # cv2.imshow("Annotated Image", annotated_image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
         # ---------- Upload to S3 ----------
         # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
