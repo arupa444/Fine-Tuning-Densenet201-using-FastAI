@@ -1,0 +1,2118 @@
+{
+  "status": "success",
+  "data": {
+    "crates": [
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8652,
+          "cx": 383.23,
+          "cy": 199.8933,
+          "w": 35.7082,
+          "h": 290.7691,
+          "angle": 1.5658
+        },
+        "color": "BLUE",
+        "crate_id": "703391",
+        "markers": [
+          {
+            "confidence": 0.7893,
+            "cx": 50.9283,
+            "cy": 23.7337,
+            "w": 24.2055,
+            "h": 24.3604,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8146,
+            "cx": 118.1629,
+            "cy": 23.9564,
+            "w": 24.907,
+            "h": 24.6836,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8113,
+            "cx": 170.8203,
+            "cy": 21.773,
+            "w": 25.85,
+            "h": 25.3996,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.8112,
+            "cx": 197.3223,
+            "cy": 21.0381,
+            "w": 24.4565,
+            "h": 26.0818,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7891,
+            "cx": 221.7902,
+            "cy": 20.3402,
+            "w": 22.4796,
+            "h": 25.0953,
+            "angle": 0,
+            "class_index": 8,
+            "decoded_label": "filled_triangle_base_right",
+            "encoded_value": "9"
+          },
+          {
+            "confidence": 0.777,
+            "cx": 243.5434,
+            "cy": 18.8536,
+            "w": 18.5375,
+            "h": 26.4208,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.892,
+          "cx": 381.4712,
+          "cy": 233.1831,
+          "w": 34.2972,
+          "h": 287.6161,
+          "angle": 1.5657
+        },
+        "color": "BLUE",
+        "crate_id": "703711",
+        "markers": [
+          {
+            "confidence": 0.7829,
+            "cx": 52.0016,
+            "cy": 19.6598,
+            "w": 24.0142,
+            "h": 24.4835,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8031,
+            "cx": 115.9514,
+            "cy": 19.8522,
+            "w": 25.6159,
+            "h": 26.6529,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8318,
+            "cx": 170.88,
+            "cy": 18.956,
+            "w": 25.285,
+            "h": 25.6948,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7954,
+            "cx": 197.3881,
+            "cy": 18.725,
+            "w": 23.461,
+            "h": 25.1403,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.782,
+            "cx": 220.1239,
+            "cy": 18.4092,
+            "w": 17.204,
+            "h": 25.7692,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.7894,
+            "cx": 239.5208,
+            "cy": 17.5995,
+            "w": 19.6374,
+            "h": 26.7565,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8898,
+          "cx": 380.7007,
+          "cy": 266.5661,
+          "w": 34.8534,
+          "h": 287.0942,
+          "angle": 1.568
+        },
+        "color": "BLUE",
+        "crate_id": "703191",
+        "markers": [
+          {
+            "confidence": 0.7849,
+            "cx": 45.2559,
+            "cy": 21.3811,
+            "w": 25.9358,
+            "h": 24.78,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8096,
+            "cx": 122.0151,
+            "cy": 22.526,
+            "w": 25.2503,
+            "h": 25.2624,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8166,
+            "cx": 170.7309,
+            "cy": 19.6726,
+            "w": 25.6397,
+            "h": 25.4159,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.8069,
+            "cx": 194.0918,
+            "cy": 19.0632,
+            "w": 17.4878,
+            "h": 26.3955,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.791,
+            "cx": 215.9793,
+            "cy": 17.9698,
+            "w": 23.6927,
+            "h": 24.9626,
+            "angle": 0,
+            "class_index": 8,
+            "decoded_label": "filled_triangle_base_right",
+            "encoded_value": "9"
+          },
+          {
+            "confidence": 0.7882,
+            "cx": 238.8188,
+            "cy": 17.9243,
+            "w": 19.0597,
+            "h": 26.456,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8796,
+          "cx": 380.6458,
+          "cy": 301.0058,
+          "w": 34.809,
+          "h": 290.6918,
+          "angle": 1.5696
+        },
+        "color": "BLUE",
+        "crate_id": "703401",
+        "markers": [
+          {
+            "confidence": 0.7937,
+            "cx": 51.1834,
+            "cy": 20.6225,
+            "w": 24.0031,
+            "h": 24.5793,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.821,
+            "cx": 120.163,
+            "cy": 19.3166,
+            "w": 25.1805,
+            "h": 24.9725,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8173,
+            "cx": 169.2833,
+            "cy": 19.3149,
+            "w": 23.7409,
+            "h": 24.6033,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.8085,
+            "cx": 193.6087,
+            "cy": 19.3511,
+            "w": 23.3079,
+            "h": 24.7409,
+            "angle": 0,
+            "class_index": 4,
+            "decoded_label": "filled_semicircle_arc_right",
+            "encoded_value": "4"
+          },
+          {
+            "confidence": 0.8244,
+            "cx": 218.1765,
+            "cy": 19.5462,
+            "w": 23.3059,
+            "h": 24.8997,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.7946,
+            "cx": 241.2713,
+            "cy": 18.1556,
+            "w": 19.9504,
+            "h": 25.9694,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8807,
+          "cx": 379.8644,
+          "cy": 334.2287,
+          "w": 34.821,
+          "h": 289.5646,
+          "angle": 1.5707
+        },
+        "color": "BLUE",
+        "crate_id": "703091",
+        "markers": [
+          {
+            "confidence": 0.7929,
+            "cx": 47.3858,
+            "cy": 19.6929,
+            "w": 25.4156,
+            "h": 24.73,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8055,
+            "cx": 122.4529,
+            "cy": 20.1045,
+            "w": 26.21,
+            "h": 26.2532,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8147,
+            "cx": 171.5156,
+            "cy": 19.0201,
+            "w": 23.9734,
+            "h": 25.1636,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.817,
+            "cx": 195.7914,
+            "cy": 19.114,
+            "w": 22.7448,
+            "h": 26.0217,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.7997,
+            "cx": 218.9346,
+            "cy": 18.7841,
+            "w": 22.3328,
+            "h": 25.6575,
+            "angle": 0,
+            "class_index": 8,
+            "decoded_label": "filled_triangle_base_right",
+            "encoded_value": "9"
+          },
+          {
+            "confidence": 0.7856,
+            "cx": 240.4823,
+            "cy": 17.7272,
+            "w": 17.7794,
+            "h": 26.2363,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.884,
+          "cx": 379.4462,
+          "cy": 367.4644,
+          "w": 289.2013,
+          "h": 34.5978,
+          "angle": 0.0003
+        },
+        "color": "BLUE",
+        "crate_id": "703171",
+        "markers": [
+          {
+            "confidence": 0.7872,
+            "cx": 48.5264,
+            "cy": 20.3405,
+            "w": 24.8272,
+            "h": 24.1278,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8051,
+            "cx": 117.6296,
+            "cy": 20.3883,
+            "w": 24.3158,
+            "h": 24.7267,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8153,
+            "cx": 173.5593,
+            "cy": 19.1065,
+            "w": 24.5098,
+            "h": 24.5572,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.8008,
+            "cx": 196.4525,
+            "cy": 18.408,
+            "w": 17.5238,
+            "h": 25.5043,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.7923,
+            "cx": 218.6357,
+            "cy": 18.0332,
+            "w": 23.3956,
+            "h": 24.4502,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.7906,
+            "cx": 240.6874,
+            "cy": 17.6826,
+            "w": 17.9326,
+            "h": 25.6338,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8841,
+          "cx": 378.8113,
+          "cy": 400.4871,
+          "w": 288.982,
+          "h": 35.1886,
+          "angle": 0.0006
+        },
+        "color": "BLUE",
+        "crate_id": "703101",
+        "markers": [
+          {
+            "confidence": 0.7919,
+            "cx": 46.5672,
+            "cy": 20.2753,
+            "w": 25.0038,
+            "h": 25.3164,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8089,
+            "cx": 119.0232,
+            "cy": 19.3365,
+            "w": 25.4546,
+            "h": 24.8811,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.825,
+            "cx": 177.4788,
+            "cy": 19.0276,
+            "w": 24.4685,
+            "h": 25.3121,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7903,
+            "cx": 200.3471,
+            "cy": 18.1227,
+            "w": 17.223,
+            "h": 25.8874,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.8125,
+            "cx": 220.6706,
+            "cy": 18.6931,
+            "w": 22.734,
+            "h": 25.5937,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.7844,
+            "cx": 241.4947,
+            "cy": 18.1049,
+            "w": 17.8812,
+            "h": 26.5275,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8807,
+          "cx": 380.4129,
+          "cy": 434.3256,
+          "w": 35.6576,
+          "h": 288.5356,
+          "angle": 1.5704
+        },
+        "color": "BLUE",
+        "crate_id": "702A81",
+        "markers": [
+          {
+            "confidence": 0.7905,
+            "cx": 44.7689,
+            "cy": 19.1302,
+            "w": 26.1663,
+            "h": 24.7825,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8107,
+            "cx": 117.9131,
+            "cy": 20.1863,
+            "w": 26.7972,
+            "h": 25.6841,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8267,
+            "cx": 171.1083,
+            "cy": 20.657,
+            "w": 23.5483,
+            "h": 25.5638,
+            "angle": 0,
+            "class_index": 2,
+            "decoded_label": "filled_semicircle_arc_bottom",
+            "encoded_value": "2"
+          },
+          {
+            "confidence": 0.7912,
+            "cx": 194.8797,
+            "cy": 19.8238,
+            "w": 21.8229,
+            "h": 25.7013,
+            "angle": 0,
+            "class_index": 9,
+            "decoded_label": "filled_triangle_base_top",
+            "encoded_value": "A"
+          },
+          {
+            "confidence": 0.7945,
+            "cx": 219.2632,
+            "cy": 18.6721,
+            "w": 23.5794,
+            "h": 25.1685,
+            "angle": 0,
+            "class_index": 7,
+            "decoded_label": "filled_triangle_base_left",
+            "encoded_value": "8"
+          },
+          {
+            "confidence": 0.7917,
+            "cx": 239.5478,
+            "cy": 17.7685,
+            "w": 17.7341,
+            "h": 26.2362,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8813,
+          "cx": 377.6638,
+          "cy": 467.6668,
+          "w": 287.6557,
+          "h": 35.149,
+          "angle": 0.0004
+        },
+        "color": "BLUE",
+        "crate_id": "702921",
+        "markers": [
+          {
+            "confidence": 0.7903,
+            "cx": 47.4503,
+            "cy": 17.9784,
+            "w": 24.993,
+            "h": 24.6763,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8105,
+            "cx": 122.1479,
+            "cy": 19.6925,
+            "w": 25.7448,
+            "h": 25.4484,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.812,
+            "cx": 170.534,
+            "cy": 18.1429,
+            "w": 23.0734,
+            "h": 25.9949,
+            "angle": 0,
+            "class_index": 2,
+            "decoded_label": "filled_semicircle_arc_bottom",
+            "encoded_value": "2"
+          },
+          {
+            "confidence": 0.7891,
+            "cx": 192.9181,
+            "cy": 19.2928,
+            "w": 22.4435,
+            "h": 24.9533,
+            "angle": 0,
+            "class_index": 8,
+            "decoded_label": "filled_triangle_base_right",
+            "encoded_value": "9"
+          },
+          {
+            "confidence": 0.8061,
+            "cx": 217.927,
+            "cy": 18.7869,
+            "w": 22.6598,
+            "h": 25.282,
+            "angle": 0,
+            "class_index": 2,
+            "decoded_label": "filled_semicircle_arc_bottom",
+            "encoded_value": "2"
+          },
+          {
+            "confidence": 0.7835,
+            "cx": 240.145,
+            "cy": 17.6339,
+            "w": 18.304,
+            "h": 25.7376,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8765,
+          "cx": 376.6434,
+          "cy": 500.9611,
+          "w": 285.349,
+          "h": 35.205,
+          "angle": 0.0008
+        },
+        "color": "BLUE",
+        "crate_id": "703701",
+        "markers": [
+          {
+            "confidence": 0.7893,
+            "cx": 47.4455,
+            "cy": 18.4391,
+            "w": 24.5532,
+            "h": 24.2226,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8147,
+            "cx": 118.7532,
+            "cy": 19.5967,
+            "w": 25.0402,
+            "h": 24.6729,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8303,
+            "cx": 175.3706,
+            "cy": 18.1166,
+            "w": 24.036,
+            "h": 24.886,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.804,
+            "cx": 199.1828,
+            "cy": 16.9181,
+            "w": 22.2739,
+            "h": 24.0714,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8083,
+            "cx": 222.0279,
+            "cy": 17.6132,
+            "w": 21.4928,
+            "h": 24.9715,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.7955,
+            "cx": 241.5596,
+            "cy": 17.1576,
+            "w": 17.7195,
+            "h": 26.0942,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8592,
+          "cx": 375.1034,
+          "cy": 534.5095,
+          "w": 281.821,
+          "h": 35.7823,
+          "angle": 0.0022
+        },
+        "color": "BLUE",
+        "crate_id": "702701",
+        "markers": [
+          {
+            "confidence": 0.7852,
+            "cx": 44.9803,
+            "cy": 16.8878,
+            "w": 25.0155,
+            "h": 24.636,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.7979,
+            "cx": 121.0872,
+            "cy": 18.1119,
+            "w": 24.2993,
+            "h": 25.842,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8246,
+            "cx": 174.8517,
+            "cy": 19.528,
+            "w": 23.7506,
+            "h": 26.6791,
+            "angle": 0,
+            "class_index": 2,
+            "decoded_label": "filled_semicircle_arc_bottom",
+            "encoded_value": "2"
+          },
+          {
+            "confidence": 0.7803,
+            "cx": 199.8865,
+            "cy": 16.1227,
+            "w": 21.8206,
+            "h": 23.0543,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8084,
+            "cx": 220.1098,
+            "cy": 18.6661,
+            "w": 21.9832,
+            "h": 26.6803,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.7826,
+            "cx": 239.8143,
+            "cy": 18.7429,
+            "w": 17.3574,
+            "h": 26.4111,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8429,
+          "cx": 375.1775,
+          "cy": 567.0818,
+          "w": 290.2197,
+          "h": 36.573,
+          "angle": 0.0036
+        },
+        "color": "BLUE",
+        "crate_id": "702141",
+        "markers": [
+          {
+            "confidence": 0.7786,
+            "cx": 50.6221,
+            "cy": 18.4269,
+            "w": 24.434,
+            "h": 24.884,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.805,
+            "cx": 119.8125,
+            "cy": 20.7981,
+            "w": 24.7405,
+            "h": 24.8157,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8207,
+            "cx": 172.5182,
+            "cy": 21.168,
+            "w": 23.1543,
+            "h": 25.9061,
+            "angle": 0,
+            "class_index": 2,
+            "decoded_label": "filled_semicircle_arc_bottom",
+            "encoded_value": "2"
+          },
+          {
+            "confidence": 0.8017,
+            "cx": 195.692,
+            "cy": 19.9744,
+            "w": 22.0095,
+            "h": 25.4786,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.8117,
+            "cx": 221.1428,
+            "cy": 20.134,
+            "w": 24.296,
+            "h": 25.3006,
+            "angle": 0,
+            "class_index": 4,
+            "decoded_label": "filled_semicircle_arc_right",
+            "encoded_value": "4"
+          },
+          {
+            "confidence": 0.7951,
+            "cx": 241.7521,
+            "cy": 19.7934,
+            "w": 17.7475,
+            "h": 26.2585,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.836,
+          "cx": 374.3698,
+          "cy": 599.8469,
+          "w": 289.7084,
+          "h": 37.1535,
+          "angle": 0.004
+        },
+        "color": "BLUE",
+        "crate_id": "7034A1",
+        "markers": [
+          {
+            "confidence": 0.7669,
+            "cx": 50.8356,
+            "cy": 18.9633,
+            "w": 25.9119,
+            "h": 24.7519,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8068,
+            "cx": 119.6422,
+            "cy": 20.6199,
+            "w": 25.2599,
+            "h": 25.2176,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8051,
+            "cx": 173.0979,
+            "cy": 20.7961,
+            "w": 24.6391,
+            "h": 25.2665,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.822,
+            "cx": 197.8782,
+            "cy": 21.084,
+            "w": 22.9119,
+            "h": 25.6268,
+            "angle": 0,
+            "class_index": 4,
+            "decoded_label": "filled_semicircle_arc_right",
+            "encoded_value": "4"
+          },
+          {
+            "confidence": 0.8176,
+            "cx": 220.1241,
+            "cy": 21.1088,
+            "w": 21.8319,
+            "h": 25.4993,
+            "angle": 0,
+            "class_index": 9,
+            "decoded_label": "filled_triangle_base_top",
+            "encoded_value": "A"
+          },
+          {
+            "confidence": 0.7466,
+            "cx": 240.9145,
+            "cy": 19.642,
+            "w": 18.4808,
+            "h": 26.1544,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8043,
+          "cx": 376.1701,
+          "cy": 632.3353,
+          "w": 34.3838,
+          "h": 283.7602,
+          "angle": 1.5704
+        },
+        "color": "BLUE",
+        "crate_id": "703001",
+        "markers": [
+          {
+            "confidence": 0.7756,
+            "cx": 43.3408,
+            "cy": 16.0945,
+            "w": 25.2313,
+            "h": 24.19,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8032,
+            "cx": 117.782,
+            "cy": 18.5566,
+            "w": 24.9606,
+            "h": 25.0393,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8226,
+            "cx": 165.82,
+            "cy": 17.3833,
+            "w": 23.7665,
+            "h": 24.9128,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.8079,
+            "cx": 189.9165,
+            "cy": 18.101,
+            "w": 22.6226,
+            "h": 24.7436,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8144,
+            "cx": 213.3772,
+            "cy": 17.9632,
+            "w": 22.9115,
+            "h": 24.651,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.7925,
+            "cx": 235.172,
+            "cy": 18.1115,
+            "w": 18.3584,
+            "h": 25.6118,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8486,
+          "cx": 379.8516,
+          "cy": 666.2424,
+          "w": 298.4375,
+          "h": 34.9834,
+          "angle": 0.0037
+        },
+        "color": "BLUE",
+        "crate_id": "702931",
+        "markers": [
+          {
+            "confidence": 0.8072,
+            "cx": 46.7884,
+            "cy": 15.918,
+            "w": 25.8523,
+            "h": 24.0465,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8201,
+            "cx": 121.7471,
+            "cy": 18.5806,
+            "w": 25.2579,
+            "h": 24.6959,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8102,
+            "cx": 173.5283,
+            "cy": 18.7397,
+            "w": 23.4043,
+            "h": 25.5845,
+            "angle": 0,
+            "class_index": 2,
+            "decoded_label": "filled_semicircle_arc_bottom",
+            "encoded_value": "2"
+          },
+          {
+            "confidence": 0.7873,
+            "cx": 198.0721,
+            "cy": 18.2662,
+            "w": 21.5787,
+            "h": 25.1746,
+            "angle": 0,
+            "class_index": 8,
+            "decoded_label": "filled_triangle_base_right",
+            "encoded_value": "9"
+          },
+          {
+            "confidence": 0.8022,
+            "cx": 220.8041,
+            "cy": 18.144,
+            "w": 23.0162,
+            "h": 25.6182,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7937,
+            "cx": 292.0273,
+            "cy": 15.8424,
+            "w": 14.0816,
+            "h": 23.0709,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8578,
+          "cx": 376.6919,
+          "cy": 699.0246,
+          "w": 297.5912,
+          "h": 34.5046,
+          "angle": 0.0096
+        },
+        "color": "BLUE",
+        "crate_id": "702811",
+        "markers": [
+          {
+            "confidence": 0.7903,
+            "cx": 46.8381,
+            "cy": 16.1402,
+            "w": 24.2355,
+            "h": 23.7195,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8059,
+            "cx": 120.6298,
+            "cy": 18.3815,
+            "w": 24.7815,
+            "h": 24.3464,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8143,
+            "cx": 176.2435,
+            "cy": 19.8525,
+            "w": 23.9143,
+            "h": 26.0435,
+            "angle": 0,
+            "class_index": 2,
+            "decoded_label": "filled_semicircle_arc_bottom",
+            "encoded_value": "2"
+          },
+          {
+            "confidence": 0.795,
+            "cx": 201.2419,
+            "cy": 19.6853,
+            "w": 23.5156,
+            "h": 25.2783,
+            "angle": 0,
+            "class_index": 7,
+            "decoded_label": "filled_triangle_base_left",
+            "encoded_value": "8"
+          },
+          {
+            "confidence": 0.7835,
+            "cx": 222.3494,
+            "cy": 19.6039,
+            "w": 16.951,
+            "h": 25.4823,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.7791,
+            "cx": 241.4309,
+            "cy": 19.3259,
+            "w": 18.5823,
+            "h": 25.3622,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8553,
+          "cx": 375.9891,
+          "cy": 731.6651,
+          "w": 297.1136,
+          "h": 33.591,
+          "angle": 0.0094
+        },
+        "color": "BLUE",
+        "crate_id": "703791",
+        "markers": [
+          {
+            "confidence": 0.7863,
+            "cx": 48.4174,
+            "cy": 16.5738,
+            "w": 24.9878,
+            "h": 24.0329,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.7989,
+            "cx": 123.4562,
+            "cy": 18.6687,
+            "w": 25.2569,
+            "h": 24.5527,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8193,
+            "cx": 174.3744,
+            "cy": 18.5328,
+            "w": 24.0614,
+            "h": 24.9714,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.8068,
+            "cx": 198.5026,
+            "cy": 18.8821,
+            "w": 22.984,
+            "h": 24.5372,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.7985,
+            "cx": 219.0628,
+            "cy": 19.4007,
+            "w": 23.0481,
+            "h": 25.7186,
+            "angle": 0,
+            "class_index": 8,
+            "decoded_label": "filled_triangle_base_right",
+            "encoded_value": "9"
+          },
+          {
+            "confidence": 0.7553,
+            "cx": 241.4139,
+            "cy": 18.7499,
+            "w": 18.3142,
+            "h": 25.4207,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8495,
+          "cx": 376.2945,
+          "cy": 764.5894,
+          "w": 297.4289,
+          "h": 33.742,
+          "angle": 0.0103
+        },
+        "color": "BLUE",
+        "crate_id": "703311",
+        "markers": [
+          {
+            "confidence": 0.7889,
+            "cx": 49.4777,
+            "cy": 15.8991,
+            "w": 25.8224,
+            "h": 24.4864,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8005,
+            "cx": 118.5458,
+            "cy": 17.4358,
+            "w": 24.7978,
+            "h": 24.4392,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8312,
+            "cx": 170.2174,
+            "cy": 17.7092,
+            "w": 23.7888,
+            "h": 24.8706,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.8221,
+            "cx": 193.8512,
+            "cy": 17.8162,
+            "w": 23.0698,
+            "h": 24.8371,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.8031,
+            "cx": 218.3061,
+            "cy": 18.5958,
+            "w": 22.9645,
+            "h": 24.5412,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.7739,
+            "cx": 240.9335,
+            "cy": 18.6948,
+            "w": 18.3459,
+            "h": 25.3942,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8648,
+          "cx": 369.2848,
+          "cy": 796.9667,
+          "w": 310.6815,
+          "h": 36.8828,
+          "angle": 0.0068
+        },
+        "color": "BLUE",
+        "crate_id": "703081",
+        "markers": [
+          {
+            "confidence": 0.7869,
+            "cx": 65.4931,
+            "cy": 18.6685,
+            "w": 24.7074,
+            "h": 23.9258,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.794,
+            "cx": 136.5157,
+            "cy": 19.8036,
+            "w": 25.1053,
+            "h": 24.5359,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8101,
+            "cx": 183.4654,
+            "cy": 20.3586,
+            "w": 24.3177,
+            "h": 25.067,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7989,
+            "cx": 207.7255,
+            "cy": 20.5907,
+            "w": 23.3813,
+            "h": 25.1886,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.7882,
+            "cx": 232.2924,
+            "cy": 20.9314,
+            "w": 23.8926,
+            "h": 24.7516,
+            "angle": 0,
+            "class_index": 7,
+            "decoded_label": "filled_triangle_base_left",
+            "encoded_value": "8"
+          },
+          {
+            "confidence": 0.787,
+            "cx": 253.4372,
+            "cy": 20.6531,
+            "w": 17.8887,
+            "h": 25.3442,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8104,
+          "cx": 372.8362,
+          "cy": 830.0181,
+          "w": 286.2196,
+          "h": 37.8253,
+          "angle": 0.0043
+        },
+        "color": "BLUE",
+        "crate_id": "703381",
+        "markers": [
+          {
+            "confidence": 0.7784,
+            "cx": 49.9283,
+            "cy": 18.7094,
+            "w": 24.3354,
+            "h": 23.7535,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.7987,
+            "cx": 114.5426,
+            "cy": 20.3585,
+            "w": 24.7058,
+            "h": 24.0859,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.809,
+            "cx": 167.3208,
+            "cy": 20.8275,
+            "w": 23.3576,
+            "h": 24.8505,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.8138,
+            "cx": 190.8843,
+            "cy": 21.8516,
+            "w": 23.3082,
+            "h": 25.6481,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7802,
+            "cx": 214.8342,
+            "cy": 21.4229,
+            "w": 22.234,
+            "h": 24.162,
+            "angle": 0,
+            "class_index": 7,
+            "decoded_label": "filled_triangle_base_left",
+            "encoded_value": "8"
+          },
+          {
+            "confidence": 0.7734,
+            "cx": 236.6384,
+            "cy": 21.4941,
+            "w": 18.4014,
+            "h": 25.598,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8606,
+          "cx": 366.7626,
+          "cy": 863.1469,
+          "w": 313.3203,
+          "h": 37.1034,
+          "angle": 0.0051
+        },
+        "color": "BLUE",
+        "crate_id": "703131",
+        "markers": [
+          {
+            "confidence": 0.7952,
+            "cx": 64.4457,
+            "cy": 18.2756,
+            "w": 25.2903,
+            "h": 23.986,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.7974,
+            "cx": 140.0142,
+            "cy": 20.5783,
+            "w": 24.5147,
+            "h": 25.2075,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.7887,
+            "cx": 190.6046,
+            "cy": 20.7735,
+            "w": 24.98,
+            "h": 25.8205,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7881,
+            "cx": 214.7921,
+            "cy": 21.1291,
+            "w": 17.4785,
+            "h": 26.0031,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.8101,
+            "cx": 236.6449,
+            "cy": 23.0951,
+            "w": 23.7124,
+            "h": 25.1921,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7715,
+            "cx": 258.7736,
+            "cy": 22.1146,
+            "w": 18.155,
+            "h": 26.2386,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.7632,
+          "cx": 370.8492,
+          "cy": 896.8091,
+          "w": 287.2004,
+          "h": 38.1806,
+          "angle": 0.0034
+        },
+        "color": "BLUE",
+        "crate_id": "7021A1",
+        "markers": [
+          {
+            "confidence": 0.7841,
+            "cx": 48.6681,
+            "cy": 17.3078,
+            "w": 25.0072,
+            "h": 23.9915,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.7972,
+            "cx": 117.5496,
+            "cy": 19.7318,
+            "w": 25.1169,
+            "h": 25.4405,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8079,
+            "cx": 173.6456,
+            "cy": 20.5045,
+            "w": 23.4958,
+            "h": 25.3825,
+            "angle": 0,
+            "class_index": 2,
+            "decoded_label": "filled_semicircle_arc_bottom",
+            "encoded_value": "2"
+          },
+          {
+            "confidence": 0.8045,
+            "cx": 197.9507,
+            "cy": 20.5536,
+            "w": 22.2668,
+            "h": 24.7234,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.7838,
+            "cx": 220.8154,
+            "cy": 21.6357,
+            "w": 22.5787,
+            "h": 25.4579,
+            "angle": 0,
+            "class_index": 9,
+            "decoded_label": "filled_triangle_base_top",
+            "encoded_value": "A"
+          },
+          {
+            "confidence": 0.7033,
+            "cx": 240.4704,
+            "cy": 21.1271,
+            "w": 17.2,
+            "h": 24.6638,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8504,
+          "cx": 363.5427,
+          "cy": 929.7966,
+          "w": 314.8275,
+          "h": 36.4431,
+          "angle": 0.0054
+        },
+        "color": "BLUE",
+        "crate_id": "870334",
+        "markers": [
+          {
+            "confidence": 0.799,
+            "cx": 11.3515,
+            "cy": 22.4269,
+            "w": 22.8413,
+            "h": 27.9463,
+            "angle": 0,
+            "class_index": 7,
+            "decoded_label": "filled_triangle_base_left",
+            "encoded_value": "8"
+          },
+          {
+            "confidence": 0.7762,
+            "cx": 69.4068,
+            "cy": 17.4569,
+            "w": 24.7721,
+            "h": 23.9153,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.7865,
+            "cx": 137.4902,
+            "cy": 19.9565,
+            "w": 25.179,
+            "h": 24.5299,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8024,
+            "cx": 189.964,
+            "cy": 19.8107,
+            "w": 24.0461,
+            "h": 24.5201,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.8011,
+            "cx": 213.9648,
+            "cy": 20.6004,
+            "w": 23.2387,
+            "h": 25.0107,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7983,
+            "cx": 239.0635,
+            "cy": 20.3443,
+            "w": 24.4319,
+            "h": 24.991,
+            "angle": 0,
+            "class_index": 4,
+            "decoded_label": "filled_semicircle_arc_right",
+            "encoded_value": "4"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8495,
+          "cx": 369.4959,
+          "cy": 964.9633,
+          "w": 298.9427,
+          "h": 33.5619,
+          "angle": 0.0145
+        },
+        "color": "BLUE",
+        "crate_id": "700031",
+        "markers": [
+          {
+            "confidence": 0.7842,
+            "cx": 52.5544,
+            "cy": 13.12,
+            "w": 24.9501,
+            "h": 22.6544,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.8068,
+            "cx": 124.6782,
+            "cy": 17.5339,
+            "w": 24.8633,
+            "h": 24.4326,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8059,
+            "cx": 179.4104,
+            "cy": 17.8932,
+            "w": 23.2429,
+            "h": 26.2663,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8297,
+            "cx": 203.3069,
+            "cy": 17.9231,
+            "w": 23.0056,
+            "h": 24.7451,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.8159,
+            "cx": 227.1155,
+            "cy": 18.5579,
+            "w": 23.3319,
+            "h": 25.1348,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7314,
+            "cx": 247.8574,
+            "cy": 18.4123,
+            "w": 17.7784,
+            "h": 24.4542,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8481,
+          "cx": 366.4673,
+          "cy": 997.4045,
+          "w": 283.1033,
+          "h": 34.0807,
+          "angle": 0.0218
+        },
+        "color": "BLUE",
+        "crate_id": "702131",
+        "markers": [
+          {
+            "confidence": 0.7973,
+            "cx": 47.2482,
+            "cy": 15.7903,
+            "w": 25.9499,
+            "h": 23.7724,
+            "angle": 0,
+            "class_index": 6,
+            "decoded_label": "filled_triangle_base_bottom",
+            "encoded_value": "7"
+          },
+          {
+            "confidence": 0.7939,
+            "cx": 118.2522,
+            "cy": 19.7444,
+            "w": 24.9108,
+            "h": 24.8734,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.7973,
+            "cx": 171.8526,
+            "cy": 19.8406,
+            "w": 23.2821,
+            "h": 26.722,
+            "angle": 0,
+            "class_index": 2,
+            "decoded_label": "filled_semicircle_arc_bottom",
+            "encoded_value": "2"
+          },
+          {
+            "confidence": 0.7946,
+            "cx": 195.7088,
+            "cy": 19.7216,
+            "w": 22.482,
+            "h": 25.0349,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.8192,
+            "cx": 219.6888,
+            "cy": 20.1543,
+            "w": 23.4161,
+            "h": 24.7326,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7799,
+            "cx": 240.8122,
+            "cy": 20.4145,
+            "w": 17.7464,
+            "h": 24.721,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      },
+      {
+        "crate_bbox": {
+          "class_index": 0,
+          "confidence": 0.8451,
+          "cx": 366.6723,
+          "cy": 1031.9652,
+          "w": 289.9862,
+          "h": 36.0411,
+          "angle": 0.026
+        },
+        "color": "BLUE",
+        "crate_id": "803111",
+        "markers": [
+          {
+            "confidence": 0.7813,
+            "cx": 49.7492,
+            "cy": 14.6869,
+            "w": 24.6291,
+            "h": 22.4763,
+            "angle": 0,
+            "class_index": 7,
+            "decoded_label": "filled_triangle_base_left",
+            "encoded_value": "8"
+          },
+          {
+            "confidence": 0.8015,
+            "cx": 120.5343,
+            "cy": 19.0873,
+            "w": 26.332,
+            "h": 25.0593,
+            "angle": 0,
+            "class_index": 0,
+            "decoded_label": "filled_circle",
+            "encoded_value": "0"
+          },
+          {
+            "confidence": 0.799,
+            "cx": 179.1686,
+            "cy": 18.8305,
+            "w": 24.7468,
+            "h": 24.4841,
+            "angle": 0,
+            "class_index": 3,
+            "decoded_label": "filled_semicircle_arc_left",
+            "encoded_value": "3"
+          },
+          {
+            "confidence": 0.7907,
+            "cx": 202.4815,
+            "cy": 19.7489,
+            "w": 17.2481,
+            "h": 25.9503,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.8018,
+            "cx": 223.4809,
+            "cy": 20.261,
+            "w": 23.26,
+            "h": 24.6491,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          },
+          {
+            "confidence": 0.7236,
+            "cx": 243.7415,
+            "cy": 20.5721,
+            "w": 17.0285,
+            "h": 25.0786,
+            "angle": 0,
+            "class_index": 1,
+            "decoded_label": "filled_rectangle_vertical",
+            "encoded_value": "1"
+          }
+        ]
+      }
+    ],
+    "image_key": "string/10-12-2025/string/string/string/crate_d02e47f6-6b87-4f1d-a887-d4a7fbd767e0_2025-12-10_08-22-02.jpg",
+    "image_url": "https://tracksure-jfl-dev.s3.amazonaws.com/string/10-12-2025/string/string/string/crate_d02e47f6-6b87-4f1d-a887-d4a7fbd767e0_2025-12-10_08-22-02.jpg"
+  },
+  "message": "Crate detection, color classification, marker detection and classification completed",
+  "code": 200,
+  "error": null
+}
