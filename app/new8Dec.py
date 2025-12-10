@@ -103,7 +103,9 @@ def process_yolo_results(results):
             "bbox": [x1, y1, x2, y2]
         })
 
-    return boxes_info, annotated
+    annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
+
+    return boxes_info, annotated_rgb
 
 
 
@@ -146,7 +148,9 @@ def process_yolo_results_crate_id(results):
             # "obb_points": box.tolist()
         })
 
-    return boxes_info, annotated
+    annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
+
+    return boxes_info, annotated_rgb
 
 
 def draw_scaled_centered_text(annotated_image, crate_id, bbox):
