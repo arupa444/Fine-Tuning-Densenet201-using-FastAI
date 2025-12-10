@@ -379,7 +379,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         image_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, img_name)
         json_key = generate_s3_key(app_type, android_session_id, type_of_load, store_transfer_type, json_name)
 
-        cv2.imwrite(f"testImages/{file.filename}Output.jpg", annotated_image)
+        cv2.imwrite(f"testImages/{file.filename.split('.')[0]}Output.jpg", annotated_image)
         print(f"Saved image {file.filename}Output.jpg")
         # cv2.imshow("Annotated Image", annotated_image)
         # cv2.waitKey(0)
@@ -617,7 +617,7 @@ async def predict_marker(
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key)
         }
-        cv2.imwrite(f"testImages/{file.filename}Output.jpg", annotated_image)
+        cv2.imwrite(f"testImages/{file.filename.split('.')[0]}Output.jpg", annotated_image)
         print(f"Saved image {file.filename}Output.jpg")
         # cv2.imshow("Annotated Image", annotated_image)
         # cv2.waitKey(0)
