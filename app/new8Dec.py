@@ -149,7 +149,6 @@ def process_yolo_results_crate_id(results):
     return boxes_info, annotated
 
 
-
 def draw_scaled_centered_text(annotated_image, crate_id, bbox):
     x1, y1, x2, y2 = bbox
     w = x2 - x1
