@@ -5,6 +5,7 @@ from PIL import Image, ImageOps
 from functools import lru_cache
 from datetime import datetime
 from ultralytics import YOLO
+from PIL import ImageFilter
 import onnxruntime as ort
 import numpy as np
 import logging
@@ -516,7 +517,7 @@ async def predict_marker(
                 continue
 
             # ---- Step 2: Marker Detection ----
-            marker_np = np.array(crate_crop)
+            marker_np = cv2.cvtColor(np.array(crate_crop), cv2.COLOR_RGB2BGR)
             marker_results = marker_model.predict(source=marker_np, conf=0.5, iou=0.5, imgsz=640, verbose=False)
             # marker_boxes_info, _ = process_yolo_results(marker_results)
 
@@ -524,22 +525,14 @@ async def predict_marker(
             classified_markers = []
             for i, m_box in enumerate(marker_results[0].obb.xyxy):
                 mx1, my1, mx2, my2 = map(int, m_box)
-
-                padding = 10  # Increase padding
-                h_marker, w_marker = marker_np.shape[:2]
+                padding = 5
                 mx1 = max(0, mx1 - padding)
                 my1 = max(0, my1 - padding)
-                mx2 = min(w_marker, mx2 + padding)
-                my2 = min(h_marker, my2 + padding)
-
-                # Ensure minimum crop size
-                crop_w = mx2 - mx1
-                crop_h = my2 - my1
-                if crop_w < 20 or crop_h < 20:
-                    continue  # Skip tiny detections
-
+                mx2 = min(marker_np.shape[1], mx2 + padding)
+                my2 = min(marker_np.shape[0], mx2 + padding)
                 marker_crop = marker_np[my1:my2, mx1:mx2]
-                marker_crop_pil = Image.fromarray(marker_crop)
+                marker_crop_pil = Image.fromarray(cv2.cvtColor(marker_crop, cv2.COLOR_BGR2RGB))
+                marker_crop_pil = marker_crop_pil.filter(ImageFilter.SHARPEN)
                 marker_input = preprocess_image_for_onnx_marker(marker_crop_pil, (64, 64))
                 cls_output = marker_cls_session.run([marker_cls_output], {marker_cls_input: marker_input})
                 cls_idx = int(np.argmax(cls_output[0]))
@@ -630,7 +623,7 @@ async def predict_marker(
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key)
         }
-        cv2.imwrite(f"testImages/{file.filename.split('.')[0]}Output.jpg", annotated_image)
+        cv2.imwrite(f"testImages/{file.filename.split('.')[0]}Output11Dec.jpg", annotated_image)
         print(f"Saved image {file.filename}Output.jpg")
         # cv2.imshow("Annotated Image", annotated_image)
         # cv2.waitKey(0)
