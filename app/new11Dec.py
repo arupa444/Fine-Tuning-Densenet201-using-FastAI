@@ -298,9 +298,6 @@ def preprocess_image_for_onnx_marker(image: Image.Image, size) -> np.ndarray:
 
     resized = padded.resize(size)
 
-    resized = resized.convert('L')
-    resized = resized.convert('RGB')  # Convert back to RGB for consistent processing
-
     image_array = np.array(resized, dtype=np.float32) / 255.0
 
     mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
@@ -346,7 +343,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         image_np = read_image_for_yolo(image_bytes)
 
         crate_model = get_crate_model()
-        crate_results = crate_model.predict(source=image_np, conf=0.5, imgsz=640, verbose=False)
+        crate_results = crate_model.predict(source=image_np, conf=0.5, iou=0.5, imgsz=640, verbose=False)
         boxes_info, annotated_image = process_yolo_results_crate_id(crate_results)
 
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
@@ -461,7 +458,7 @@ async def predict_marker(
 
         # ------------------ CRATE DETECTION ------------------
         crate_model = get_crate_model()
-        crate_results = crate_model.predict(source=image_np, conf=0.5, imgsz=640, verbose=False)
+        crate_results = crate_model.predict(source=image_np, conf=0.5, iou=0.5, imgsz=640, verbose=False)
         _, annotated_image = process_yolo_results_crate_id(crate_results)  # crates in RED
 
         # ------------------ COLOR CLASSIFICATION ------------------
@@ -520,7 +517,7 @@ async def predict_marker(
 
             # ---- Step 2: Marker Detection ----
             marker_np = cv2.cvtColor(np.array(crate_crop), cv2.COLOR_RGB2BGR)
-            marker_results = marker_model.predict(source=marker_np, conf=0.5, imgsz=640, verbose=False)
+            marker_results = marker_model.predict(source=marker_np, conf=0.5, iou=0.5, imgsz=640, verbose=False)
             # marker_boxes_info, _ = process_yolo_results(marker_results)
 
             # ---- Step 3: Marker Classification ----
@@ -624,8 +621,8 @@ async def predict_marker(
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key)
         }
-        cv2.imwrite(f"testImages/{file.filename.split('.')[0]}OutputWithoutIOU.jpg", annotated_image)
-        print(f"Saved image {file.filename.split('.')[0]}Output.jpg")
+        cv2.imwrite(f"testImages/{file.filename.split('.')[0]}Output.jpg", annotated_image)
+        print(f"Saved image {file.filename}Output.jpg")
         # cv2.imshow("Annotated Image", annotated_image)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
