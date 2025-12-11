@@ -5,7 +5,6 @@ from PIL import Image, ImageOps
 from functools import lru_cache
 from datetime import datetime
 from ultralytics import YOLO
-from PIL import ImageFilter
 import onnxruntime as ort
 import numpy as np
 import logging
@@ -532,7 +531,6 @@ async def predict_marker(
                 my2 = min(marker_np.shape[0], mx2 + padding)
                 marker_crop = marker_np[my1:my2, mx1:mx2]
                 marker_crop_pil = Image.fromarray(cv2.cvtColor(marker_crop, cv2.COLOR_BGR2RGB))
-                marker_crop_pil = marker_crop_pil.filter(ImageFilter.SHARPEN)
                 marker_input = preprocess_image_for_onnx_marker(marker_crop_pil, (64, 64))
                 cls_output = marker_cls_session.run([marker_cls_output], {marker_cls_input: marker_input})
                 cls_idx = int(np.argmax(cls_output[0]))
