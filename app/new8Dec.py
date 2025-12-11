@@ -343,7 +343,7 @@ async def predict_crate_with_color(scan_type: str = Form(None), app_type: str = 
         image_np = read_image_for_yolo(image_bytes)
 
         crate_model = get_crate_model()
-        crate_results = crate_model.predict(source=image_np, conf=0.5, imgsz=640, verbose=False)
+        crate_results = crate_model.predict(source=image_np, conf=0.5, iou=0.5, imgsz=640, verbose=False)
         boxes_info, annotated_image = process_yolo_results_crate_id(crate_results)
 
         color_counts = {"BLUE": 0, "RED": 0, "YELLOW": 0}
@@ -517,7 +517,7 @@ async def predict_marker(
 
             # ---- Step 2: Marker Detection ----
             marker_np = cv2.cvtColor(np.array(crate_crop), cv2.COLOR_RGB2BGR)
-            marker_results = marker_model.predict(source=marker_np, conf=0.5, imgsz=640, verbose=False)
+            marker_results = marker_model.predict(source=marker_np, conf=0.5, iou=0.5, imgsz=640, verbose=False)
             # marker_boxes_info, _ = process_yolo_results(marker_results)
 
             # ---- Step 3: Marker Classification ----
