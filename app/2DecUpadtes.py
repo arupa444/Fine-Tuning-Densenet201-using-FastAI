@@ -601,14 +601,16 @@ async def predict_marker(
             "image_url": get_s3_url(image_key),
             "json_url": get_s3_url(json_key)
         }
+        cv2.imwrite(f"testImages/{file.filename.split('.')[0]}Output11Dec.jpg", annotated_image)
+        print(f"Saved image {file.filename}Output.jpg")
 
         # cv2.imshow("Annotated Image", annotated_image)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
 
         # ---------- Upload to S3 ----------
-        upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
-        upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
+        # upload_to_s3(img_bytes.getvalue(), image_key, "image/jpeg")
+        # upload_to_s3(json.dumps(data_json, indent=2).encode(), json_key, "application/json")
 
 
         # ------------------ RETURN RESPONSE ------------------
